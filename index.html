@@ -8,6 +8,7 @@
 :root{--bg:#fff9f4;--panel:#fff;--text:#20242b;--muted:#6b7280;--line:#eaded6;--accent:#ff7a45;--soft:#fff1e8}
 body.dark{--bg:#0b1220;--panel:#121c2b;--text:#f5f7fb;--muted:#a9b4c5;--line:#29394f;--accent:#ff8b59;--soft:#182335}
 *{box-sizing:border-box}
+button,a{cursor:pointer}
 body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
 .app{max-width:760px;margin:auto;padding-bottom:86px}
 header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:15px}
@@ -71,7 +72,7 @@ nav button.active{color:var(--accent);background:var(--soft)}
 .statuspill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;border:1px solid var(--line);background:var(--soft)}
 .statuspill.verified{color:#18794e}
 .statuspill.sample{color:#9a6700}
-.directions{color:var(--accent)!important}
+.directions{color:#fff!important}
 .removeDay{color:#c43b54!important}
 .footer{text-align:center;color:var(--muted);font-size:11px;padding:20px 0}
 
