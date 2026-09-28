@@ -28,6 +28,12 @@ main{padding:15px}
 .field label{display:block;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:4px}
 .field select,.field input{width:100%;border:0;background:transparent;color:var(--text);font-size:16px;outline:none}
 .search{grid-column:1/-1}
+.locationField{grid-column:1/-1}
+.locationActions{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.locationBtn{min-height:42px;border-radius:11px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:8px 12px;font-weight:800}
+.locationBtn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.areaNotice{display:none;margin-top:12px;padding:12px 13px;border:1px solid var(--line);background:var(--panel);border-radius:14px;color:var(--muted);font-size:13px;line-height:1.45}
+.areaNotice.show{display:block}
 .chips{display:flex;gap:8px;flex-wrap:wrap;padding:12px 0}
 .chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:9px 12px;font-weight:700}
 .chip.active{background:var(--text);color:var(--bg)}
@@ -111,7 +117,7 @@ nav button.active{color:var(--accent);background:var(--soft)}
 
 <div class="hero">
   <div class="muted" style="color:#fff;opacity:.85;font-weight:800">
-    KANSAS CITY AREA • TEST BUILD
+    <span id="areaLabel">KANSAS CITY AREA</span> • TEST BUILD
   </div>
 
   <h2>This Weekend: Oct. 2–4</h2>
@@ -124,6 +130,15 @@ nav button.active{color:var(--accent);background:var(--soft)}
 </div>
 
 <div class="controls">
+
+<div class="field locationField">
+<label>Location</label>
+<input id="locationSearch" value="Kansas City, MO" placeholder="City, state or ZIP code">
+<div class="locationActions">
+<button id="searchArea" type="button" class="locationBtn primary">🔎 Search This Area</button>
+<button id="useLocation" type="button" class="locationBtn">📍 Use My Location</button>
+</div>
+</div>
 
 <div class="field">
 <label>Drive up to</label>
@@ -180,6 +195,7 @@ placeholder="antiques, cars, flea market...">
 
 </div>
 
+<div id="areaNotice" class="areaNotice"></div>
 
 <div id="chips" class="chips">
 
@@ -423,6 +439,32 @@ let surprise=null;
 let saved=new Set(JSON.parse(localStorage.getItem("weekendFunSaved")||"[]"));
 let myDay=new Set(JSON.parse(localStorage.getItem("weekendFunMyDay")||"[]"));
 const $=q=>document.querySelector(q);
+let currentArea=localStorage.getItem("weekendFunArea")||"Kansas City, MO";
+let kcDemo=true;
+
+function isKansasCityArea(value){
+  const v=(value||"").toLowerCase().trim();
+  return v.includes("kansas city") || v.includes("liberty, mo") || v.includes("independence, mo") ||
+         v.startsWith("641") || v.startsWith("640");
+}
+
+function applyArea(value){
+  currentArea=(value||"Kansas City, MO").trim();
+  localStorage.setItem("weekendFunArea",currentArea);
+  $("#locationSearch").value=currentArea;
+  $("#areaLabel").textContent=currentArea.toUpperCase();
+  kcDemo=isKansasCityArea(currentArea);
+  const notice=$("#areaNotice");
+  if(kcDemo){
+    notice.classList.remove("show");
+    notice.textContent="";
+  }else{
+    notice.classList.add("show");
+    notice.innerHTML="<b>"+currentArea+"</b> is selected. The location search is working, but this prototype only has Kansas City-area event data right now. The next step is connecting live event feeds so events load automatically for any city or ZIP code.";
+  }
+  surprise=null;
+  render();
+}
 
 function store(){
   localStorage.setItem("weekendFunSaved",JSON.stringify([...saved]));
@@ -432,6 +474,7 @@ function store(){
 function money(n){return n===0?"Free":"$"+n}
 
 function list(){
+  if(!kcDemo) return [];
   const d=+$("#distance").value;
   const b=+$("#budget").value;
   const q=$("#search").value.toLowerCase();
@@ -566,6 +609,41 @@ function buildPlan(){
   store(); render(); renderSaved(); renderPlanner(); screen("planner");
 }
 
+$("#searchArea").onclick=()=>applyArea($("#locationSearch").value);
+
+$("#locationSearch").addEventListener("keydown",e=>{
+  if(e.key==="Enter") applyArea($("#locationSearch").value);
+});
+
+$("#useLocation").onclick=()=>{
+  const btn=$("#useLocation");
+  if(!navigator.geolocation){
+    $("#areaNotice").classList.add("show");
+    $("#areaNotice").textContent="Location access is not available in this browser.";
+    return;
+  }
+  btn.textContent="📍 Finding location…";
+  navigator.geolocation.getCurrentPosition(
+    pos=>{
+      currentArea="Current location";
+      localStorage.setItem("weekendFunArea",currentArea);
+      $("#locationSearch").value=currentArea;
+      $("#areaLabel").textContent="CURRENT LOCATION";
+      kcDemo=false;
+      $("#areaNotice").classList.add("show");
+      $("#areaNotice").innerHTML="Current location selected ("+pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3)+"). The live event-data connection is the next step; once connected, Weekend Fun can load nearby events from these coordinates automatically.";
+      btn.textContent="📍 Use My Location";
+      render();
+    },
+    ()=>{
+      $("#areaNotice").classList.add("show");
+      $("#areaNotice").textContent="I couldn't get your location. You can still type a city, state or ZIP code above.";
+      btn.textContent="📍 Use My Location";
+    },
+    {enableHighAccuracy:false,timeout:10000,maximumAge:300000}
+  );
+};
+
 $("#chips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
   $("#chips").querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
   b.classList.add("active"); cat=b.dataset.cat; surprise=null; render();
@@ -591,7 +669,8 @@ $("#theme").onclick=()=>{
   $("#theme").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
 };
 
-render();
+$("#locationSearch").value=currentArea;
+applyArea(currentArea);
 renderSaved();
 renderPlanner();
 screen("discover");
