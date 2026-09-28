@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Weekend Fun</title>
+<style>
+:root{--bg:#fff9f4;--panel:#fff;--text:#20242b;--muted:#6b7280;--line:#eaded6;--accent:#ff7a45;--soft:#fff1e8}
+body.dark{--bg:#0b1220;--panel:#121c2b;--text:#f5f7fb;--muted:#a9b4c5;--line:#29394f;--accent:#ff8b59;--soft:#182335}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:var(--bg);color:var(--text)}
+.app{max-width:760px;margin:auto;padding-bottom:86px}header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding:15px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:10px}.brand{display:flex;gap:10px;align-items:center}
+.logo{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:var(--accent);color:white;font-size:23px}
+h1{margin:0;font-size:26px}.tag,.muted{color:var(--muted);font-size:13px}.theme{width:44px;height:44px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text)}
+main{padding:15px}.hero{padding:20px;border-radius:22px;background:linear-gradient(135deg,#ff9b58,var(--accent));color:white}
+.hero h2{margin:5px 0 7px;font-size:25px}.hero p{margin:0}.count{display:inline-block;margin-top:12px;padding:7px 11px;border-radius:999px;background:rgba(255,255,255,.18);font-weight:700;font-size:13px}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.field{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:9px 11px}
+.field label{display:block;font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;margin-bottom:4px}.field select,.field input{width:100%;border:0;background:transparent;color:var(--text);font-size:16px;outline:none}.search{grid-column:1/-1}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:12px 0}.chip{white-space:nowrap;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:999px;padding:9px 12px;font-weight:700}.chip.active{background:var(--text);color:var(--bg)}
+.actions{display:flex;gap:9px}.action{flex:1;min-height:46px;border-radius:13px;border:1px solid var(--line);background:var(--panel);color:var(--text);font-weight:800}.action.primary{background:var(--accent);color:white;border-color:var(--accent)}
+.section{display:flex;justify-content:space-between;align-items:end;margin:20px 2px 10px}.section h3{margin:0}.cards{display:grid;gap:11px}.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.cardtop{display:flex;gap:12px;padding:13px}.emoji{width:64px;height:64px;display:grid;place-items:center;border-radius:15px;background:var(--soft);font-size:31px;flex:0 0 auto}
+.title{font-size:17px;font-weight:850}.meta{color:var(--muted);font-size:13px;line-height:1.45;margin-top:4px}
+.buttons{display:grid;grid-template-columns:1fr 1fr 1fr;border-top:1px solid var(--line)}.buttons button{min-height:44px;border:0;border-right:1px solid var(--line);background:transparent;color:var(--text);font-weight:750}.buttons button:last-child{border-right:0}.saved{color:#d33c62!important}
+.screen{display:none}.screen.active{display:block}.empty{padding:25px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:16px}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(760px,100%);display:grid;grid-template-columns:repeat(3,1fr);background:var(--panel);border-top:1px solid var(--line);padding:7px}
+nav button{border:0;background:transparent;color:var(--muted);min-height:54px;border-radius:11px;font-weight:750}nav button.active{color:var(--accent);background:var(--soft)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:flex-end;justify-content:center;padding:12px;z-index:20}.modal.show{display:flex}.sheet{width:min(720px,100%);background:var(--panel);border-radius:22px;max-height:88vh;overflow:auto;padding:17px}.detailEmoji{height:140px;border-radius:17px;background:var(--soft);display:grid;place-items:center;font-size:70px}.detailTitle{font-size:23px;font-weight:900;margin-top:13px}.info{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}.close{float:right;border:1px solid var(--line);background:var(--soft);color:var(--text);border-radius:10px;width:40px;height:40px}.source{display:block;margin-top:13px;background:var(--accent);color:#fff;text-decoration:none;text-align:center;padding:12px;border-radius:12px;font-weight:800}.timeline{display:grid;gap:9px}.stop{border-left:3px solid var(--accent);padding:0 0 14px 12px}.time{color:var(--accent);font-weight:900}
+.footer{text-align:center;color:var(--muted);font-size:11px;padding:20px 0}
+@media(max-width:520px){.controls{grid-template-columns:1fr}.search{grid-column:auto}.hero h2{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="row"><div class="brand"><div class="logo">🎉</div><div><h1>Weekend Fun</h1><div class="tag">Find something to do.</div></div></div><button id="theme" class="theme">🌙</button></div></header>
+<main>
+<section id="discover" class="screen active">
+<div class="hero"><div class="muted" style="color:#fff;opacity:.85;font-weight:800">KANSAS CITY AREA • TEST BUILD</div><h2>This Weekend: Oct. 2–4</h2><p>Antiques, cars, flea markets, music, family activities and more.</p><div id="heroCount" class="count"></div></div>
+<div class="controls">
+<div class="field"><label>Drive up to</label><select id="distance"><option value="10">10 miles</option><option value="25" selected>25 miles</option><option value="50">50 miles</option><option value="100">100 miles</option></select></div>
+<div class="field"><label>Budget</label><select id="budget"><option value="999">Any price</option><option value="0">Free only</option><option value="10">$10 or less</option><option value="25" selected>$25 or less</option></select></div>
+<div class="field search"><label>Search</label><input id="search" placeholder="antiques, cars, flea market..."></div>
+</div>
+<div id="chips" class="chips">
+<button class="chip active" data-cat="All">Everything</button><button class="chip" data-cat="Free">🆓 Free</button><button class="chip" data-cat="Antiques">🕰️ Antiques</button><button class="chip" data-cat="Cars">🚗 Cars</button><button class="chip" data-cat="Markets">🛍️ Markets</button><button class="chip" data-cat="Music">🎵 Music</button><button class="chip" data-cat="Family">👨‍👩‍👧 Family</button><button class="chip" data-cat="Outdoors">🌳 Outdoors</button>
+</div>
+<div class="actions"><button id="surprise" class="action primary">🎲 Surprise Me</button><button id="build" class="action">🗓️ Build My Saturday</button></div>
+<div class="section"><h3>Things to do</h3><span id="results" class="muted"></span></div><div id="cards" class="cards"></div><div class="footer">A DONCO-BAYCITY™ App • Weekend Fun prototype</div>
+</section>
+
+<section id="saved" class="screen"><div class="section"><h3>Saved Events</h3><span id="savedCount" class="muted">0 saved</span></div><div id="savedCards" class="cards"></div><div class="footer">A DONCO-BAYCITY™ App</div></section>
+
+<section id="planner" class="screen"><div class="section"><h3>My Saturday</h3><span class="muted">Auto-built plan</span></div><div class="card"><div style="padding:15px"><div id="timeline" class="timeline"></div><button id="rebuild" class="action primary" style="width:100%;margin-top:10px">🔄 Build Another Saturday</button></div></div><div class="footer">A DONCO-BAYCITY™ App</div></section>
+</main>
+<nav><button class="nav active" data-screen="discover">🔎<br>Discover</button><button class="nav" data-screen="saved">♥<br>Saved</button><button class="nav" data-screen="planner">🗓️<br>My Day</button></nav>
+</div>
+
+<div id="modal" class="modal"><div class="sheet"><button id="close" class="close">✕</button><div id="detail"></div></div></div>
+
+<script>
+const events=[
+{id:1,name:"Vintage Market Days of Kansas City",emoji:"🕰️",cats:["Antiques","Markets"],day:"Friday–Sunday",time:"Fri–Sun",price:12,miles:8,place:"American Royal • West Bottoms",desc:"Large vintage and antique market with furniture, jewelry, art, handmade goods and food.",detail:"Runs Oct. 2–4, 2026. Saturday is listed as 10 AM–4 PM and Sunday 10 AM–3 PM.",source:"https://www.vintagemarketdays.com/market/kansas-city/index.php"},
+{id:2,name:"Merchant Square Fall Open House",emoji:"🚗",cats:["Cars","Markets","Free","Music"],day:"Saturday",time:"10 AM–8 PM",price:0,miles:15,place:"Merchant Square • Independence",desc:"Shopping, food, live music and a car show with hundreds of vendors.",detail:"The event advertises 400+ vendors, an evening car show and live music.",source:"https://merchantsquareantiques.com/events/fall-open-house-at-merchant-square-kc-food-shopping-car-show-live-music-free-eve"},
+{id:3,name:"West Bottoms First Festival Weekend",emoji:"🏚️",cats:["Antiques","Markets","Free"],day:"Friday–Sunday",time:"Daytime",price:0,miles:8,place:"West Bottoms",desc:"Multiple vintage and antique warehouses open together for first-weekend shopping.",detail:"Good for vintage furniture, collectibles, decor, tools and unusual finds.",source:"https://www.fleamapket.com/listing/first-friday-festival-weekends-at-west-bottoms/"},
+{id:4,name:"Super Flea",emoji:"🧰",cats:["Markets"],day:"Saturday–Sunday",time:"8:30 AM–4 PM",price:2,miles:9,place:"6200 St. John Ave",desc:"Indoor flea market with tools, collectibles, household goods and bargains.",detail:"Traditional indoor flea market with many types of merchandise.",source:""},
+{id:5,name:"Boulevard Swap 'n' Shop",emoji:"🛍️",cats:["Markets"],day:"Saturday–Sunday",time:"6 AM–2 PM",price:1,miles:13,place:"Boulevard Drive-In",desc:"Outdoor swap meet with garage-sale-style bargains.",detail:"Best for early shoppers who like browsing miscellaneous sellers.",source:""},
+{id:6,name:"Relic Auctions Card Show",emoji:"🏈",cats:["Markets","Free","Family"],day:"Saturday–Sunday",time:"Sat 9–5 • Sun 10–3",price:0,miles:18,place:"Kansas City area",desc:"Sports cards, Pokémon and other trading cards and collectibles.",detail:"Collectibles-focused show listed for Oct. 3–4 with free admission.",source:"https://tcgshowsnearme.com/events/in/usa/next-30-days"},
+{id:7,name:"Lakeside Fall Walk",emoji:"🌳",cats:["Outdoors","Free","Family"],day:"Saturday",time:"Anytime",price:0,miles:22,place:"Sample Recreation Area",desc:"Sample outdoor listing used to test the Outdoors filter.",detail:"Prototype sample only; not a verified live event.",source:""},
+{id:8,name:"Live Music Patio Night",emoji:"🎵",cats:["Music"],day:"Saturday",time:"6:30 PM",price:15,miles:12,place:"Sample Music Venue",desc:"Sample music listing used to test the Music filter.",detail:"Prototype sample only; not a verified live event.",source:""}
+];
+let cat="All",saved=new Set(),surprise=null;
+const $=q=>document.querySelector(q);
+function list(){const d=+$("#distance").value,b=+$("#budget").value,q=$("#search").value.toLowerCase();return events.filter(e=>(cat==="All"||(cat==="Free"?e.price===0:e.cats.includes(cat)))&&e.miles<=d&&e.price<=b&&(!q||(e.name+" "+e.place+" "+e.desc+" "+e.cats.join(" ")).toLowerCase().includes(q)))}
+function money(n){return n===0?"Free":"$"+n}
+function card(e){return `<article class="card"${surprise===e.id?' style="outline:3px solid var(--accent)"':''}><div class="cardtop"><div class="emoji">${e.emoji}</div><div><div class="title">${e.name}</div><div class="meta">${e.day} • ${e.time}<br>${e.miles} mi • ${money(e.price)} • ${e.place}</div></div></div><div class="buttons"><button data-detail="${e.id}">Details</button><button data-save="${e.id}" class="${saved.has(e.id)?'saved':''}">${saved.has(e.id)?"♥":"♡"}</button><button data-plan="${e.id}">+ Day</button></div></article>`}
+function bind(scope){scope.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>details(+b.dataset.detail));scope.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{let id=+b.dataset.save;saved.has(id)?saved.delete(id):saved.add(id);render();renderSaved()});scope.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>makePlan([events.find(e=>e.id===+b.dataset.plan)]))}
+function render(){const a=list();$("#results").textContent=a.length+" results";$("#heroCount").textContent="✨ "+a.length+" ideas waiting for you";$("#cards").innerHTML=a.length?a.map(card).join(""):'<div class="empty">No events match those filters.</div>';bind($("#cards"))}
+function renderSaved(){const a=events.filter(e=>saved.has(e.id));$("#savedCount").textContent=a.length+" saved";$("#savedCards").innerHTML=a.length?a.map(card).join(""):'<div class="empty">Tap ♡ on an event you like.</div>';bind($("#savedCards"))}
+function details(id){const e=events.find(x=>x.id===id);$("#detail").innerHTML=`<div class="detailEmoji">${e.emoji}</div><div class="detailTitle">${e.name}</div><p class="meta">${e.desc}</p><div class="info"><b>When:</b> ${e.day} • ${e.time}</div><div class="info"><b>Cost:</b> ${money(e.price)}</div><div class="info"><b>Distance:</b> about ${e.miles} miles in this prototype</div><div class="info"><b>Where:</b> ${e.place}</div><div class="info"><b>About:</b> ${e.detail}</div>${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">Open Event Source</a>`:""}`;$("#modal").classList.add("show")}
+function screen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("active",n.dataset.screen===id));window.scrollTo({top:0,behavior:"smooth"})}
+function makePlan(picks){if(!picks){let a=list().filter(e=>e.day.includes("Saturday")||e.day.includes("Friday–Sunday"));if(!a.length)a=list();picks=[a[0],a.find(e=>e.id!==a[0]?.id&&e.cats.includes("Markets")),a.find(e=>e.id!==a[0]?.id&&e.cats.includes("Music"))].filter(Boolean)}const labs=["Morning","Afternoon","Evening"];$("#timeline").innerHTML=picks.length?picks.map((e,i)=>`<div class="stop"><div class="time">${labs[i]||"Stop"}</div><b>${e.emoji} ${e.name}</b><div class="meta">${e.time} • ${e.place} • ${money(e.price)}</div></div>`).join(""):'<div class="empty">No matching events.</div>';screen("planner")}
+$("#chips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{$("#chips").querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));b.classList.add("active");cat=b.dataset.cat;surprise=null;render()});
+["distance","budget"].forEach(id=>$("#"+id).onchange=()=>{surprise=null;render()});$("#search").oninput=()=>{surprise=null;render()};
+$("#surprise").onclick=()=>{let a=list();if(a.length){surprise=a[Math.floor(Math.random()*a.length)].id;render()}};
+$("#build").onclick=()=>makePlan();$("#rebuild").onclick=()=>makePlan();
+document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>screen(b.dataset.screen));
+$("#close").onclick=()=>$("#modal").classList.remove("show");$("#modal").onclick=e=>{if(e.target.id==="modal")$("#modal").classList.remove("show")};
+$("#theme").onclick=()=>{document.body.classList.toggle("dark");$("#theme").textContent=document.body.classList.contains("dark")?"☀️":"🌙"};
+render();renderSaved();makePlan();screen("discover");
+</script>
+</body>
+</html>
