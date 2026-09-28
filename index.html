@@ -67,6 +67,12 @@ nav button.active{color:var(--accent);background:var(--soft)}
 .timeline{display:grid;gap:9px}
 .stop{border-left:3px solid var(--accent);padding:0 0 14px 12px}
 .time{color:var(--accent);font-weight:900}
+.statusrow{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.statuspill{font-size:11px;font-weight:800;border-radius:999px;padding:5px 8px;border:1px solid var(--line);background:var(--soft)}
+.statuspill.verified{color:#18794e}
+.statuspill.sample{color:#9a6700}
+.directions{color:var(--accent)!important}
+.removeDay{color:#c43b54!important}
 .footer{text-align:center;color:var(--muted);font-size:11px;padding:20px 0}
 
 @media(max-width:520px){
@@ -140,6 +146,26 @@ nav button.active{color:var(--accent);background:var(--soft)}
 <option value="25" selected>$25 or less</option>
 </select>
 
+</div>
+
+<div class="field">
+<label>Day</label>
+<select id="day">
+<option value="All" selected>All weekend</option>
+<option value="Friday">Friday</option>
+<option value="Saturday">Saturday</option>
+<option value="Sunday">Sunday</option>
+</select>
+</div>
+
+<div class="field">
+<label>Sort</label>
+<select id="sort">
+<option value="Recommended" selected>Recommended</option>
+<option value="Nearest">Nearest first</option>
+<option value="Cheapest">Cheapest first</option>
+<option value="Name">A–Z</option>
+</select>
 </div>
 
 <div class="field search">
@@ -380,867 +406,194 @@ class="close">
 
 
 <script>
-
 const events=[
-
-{
-id:1,
-name:"Vintage Market Days of Kansas City",
-emoji:"🕰️",
-cats:["Antiques","Markets"],
-day:"Friday–Sunday",
-time:"Fri–Sun",
-price:12,
-miles:8,
-place:"American Royal • West Bottoms",
-desc:"Large vintage and antique market with furniture, jewelry, art, handmade goods and food.",
-detail:"Runs Oct. 2–4, 2026. Saturday is listed as 10 AM–4 PM and Sunday 10 AM–3 PM.",
-source:"https://www.vintagemarketdays.com/market/kansas-city/index.php"
-},
-
-{
-id:2,
-name:"Merchant Square Fall Open House",
-emoji:"🚗",
-cats:["Cars","Markets","Free","Music"],
-day:"Saturday",
-time:"10 AM–8 PM",
-price:0,
-miles:15,
-place:"Merchant Square • Independence",
-desc:"Shopping, food, live music and a car show with hundreds of vendors.",
-detail:"The event advertises 400+ vendors, an evening car show and live music.",
-source:"https://merchantsquareantiques.com/events/fall-open-house-at-merchant-square-kc-food-shopping-car-show-live-music-free-eve"
-},
-
-{
-id:3,
-name:"West Bottoms First Festival Weekend",
-emoji:"🏚️",
-cats:["Antiques","Markets","Free"],
-day:"Friday–Sunday",
-time:"Daytime",
-price:0,
-miles:8,
-place:"West Bottoms",
-desc:"Multiple vintage and antique warehouses open together for first-weekend shopping.",
-detail:"Good for vintage furniture, collectibles, decor, tools and unusual finds.",
-source:"https://www.fleamapket.com/listing/first-friday-festival-weekends-at-west-bottoms/"
-},
-
-{
-id:4,
-name:"Super Flea",
-emoji:"🧰",
-cats:["Markets"],
-day:"Saturday–Sunday",
-time:"8:30 AM–4 PM",
-price:2,
-miles:9,
-place:"6200 St. John Ave",
-desc:"Indoor flea market with tools, collectibles, household goods and bargains.",
-detail:"Traditional indoor flea market with many types of merchandise.",
-source:""
-},
-
-{
-id:5,
-name:"Boulevard Swap 'n' Shop",
-emoji:"🛍️",
-cats:["Markets"],
-day:"Saturday–Sunday",
-time:"6 AM–2 PM",
-price:1,
-miles:13,
-place:"Boulevard Drive-In",
-desc:"Outdoor swap meet with garage-sale-style bargains.",
-detail:"Best for early shoppers who like browsing miscellaneous sellers.",
-source:""
-},
-
-{
-id:6,
-name:"Relic Auctions Card Show",
-emoji:"🏈",
-cats:["Markets","Free","Family"],
-day:"Saturday–Sunday",
-time:"Sat 9–5 • Sun 10–3",
-price:0,
-miles:18,
-place:"Kansas City area",
-desc:"Sports cards, Pokémon and other trading cards and collectibles.",
-detail:"Collectibles-focused show listed for Oct. 3–4 with free admission.",
-source:"https://tcgshowsnearme.com/events/in/usa/next-30-days"
-},
-
-{
-id:7,
-name:"Lakeside Fall Walk",
-emoji:"🌳",
-cats:["Outdoors","Free","Family"],
-day:"Saturday",
-time:"Anytime",
-price:0,
-miles:22,
-place:"Sample Recreation Area",
-desc:"Sample outdoor listing used to test the Outdoors filter.",
-detail:"Prototype sample only; not a verified live event.",
-source:""
-},
-
-{
-id:8,
-name:"Live Music Patio Night",
-emoji:"🎵",
-cats:["Music"],
-day:"Saturday",
-time:"6:30 PM",
-price:15,
-miles:12,
-place:"Sample Music Venue",
-desc:"Sample music listing used to test the Music filter.",
-detail:"Prototype sample only; not a verified live event.",
-source:""
-}
-
+{id:1,name:"Vintage Market Days of Kansas City",emoji:"🕰️",cats:["Antiques","Markets"],day:"Friday–Sunday",time:"Fri–Sun",price:12,miles:8,place:"American Royal • West Bottoms",desc:"Large vintage and antique market with furniture, jewelry, art, handmade goods and food.",detail:"Runs Oct. 2–4, 2026. Saturday is listed as 10 AM–4 PM and Sunday 10 AM–3 PM.",source:"https://www.vintagemarketdays.com/market/kansas-city/index.php",verified:true},
+{id:2,name:"Merchant Square Fall Open House",emoji:"🚗",cats:["Cars","Markets","Free","Music"],day:"Saturday",time:"10 AM–8 PM",price:0,miles:15,place:"Merchant Square • Independence",desc:"Shopping, food, live music and a car show with hundreds of vendors.",detail:"The event advertises 400+ vendors, an evening car show and live music.",source:"https://merchantsquareantiques.com/events/fall-open-house-at-merchant-square-kc-food-shopping-car-show-live-music-free-eve",verified:true},
+{id:3,name:"West Bottoms First Festival Weekend",emoji:"🏚️",cats:["Antiques","Markets","Free"],day:"Friday–Sunday",time:"Daytime",price:0,miles:8,place:"West Bottoms",desc:"Multiple vintage and antique warehouses open together for first-weekend shopping.",detail:"Good for vintage furniture, collectibles, decor, tools and unusual finds.",source:"https://www.fleamapket.com/listing/first-friday-festival-weekends-at-west-bottoms/",verified:true},
+{id:4,name:"Super Flea",emoji:"🧰",cats:["Markets"],day:"Saturday–Sunday",time:"8:30 AM–4 PM",price:2,miles:9,place:"6200 St. John Ave",desc:"Indoor flea market with tools, collectibles, household goods and bargains.",detail:"Traditional indoor flea market with many types of merchandise.",source:"",verified:true},
+{id:5,name:"Boulevard Swap 'n' Shop",emoji:"🛍️",cats:["Markets"],day:"Saturday–Sunday",time:"6 AM–2 PM",price:1,miles:13,place:"Boulevard Drive-In",desc:"Outdoor swap meet with garage-sale-style bargains.",detail:"Best for early shoppers who like browsing miscellaneous sellers.",source:"",verified:true},
+{id:6,name:"Relic Auctions Card Show",emoji:"🏈",cats:["Markets","Free","Family"],day:"Saturday–Sunday",time:"Sat 9–5 • Sun 10–3",price:0,miles:18,place:"Kansas City area",desc:"Sports cards, Pokémon and other trading cards and collectibles.",detail:"Collectibles-focused show listed for Oct. 3–4 with free admission.",source:"https://tcgshowsnearme.com/events/in/usa/next-30-days",verified:true},
+{id:7,name:"Lakeside Fall Walk",emoji:"🌳",cats:["Outdoors","Free","Family"],day:"Saturday",time:"Anytime",price:0,miles:22,place:"Sample Recreation Area",desc:"Sample outdoor listing used to test the Outdoors filter.",detail:"Prototype sample only; not a verified live event.",source:"",verified:false},
+{id:8,name:"Live Music Patio Night",emoji:"🎵",cats:["Music"],day:"Saturday",time:"6:30 PM",price:15,miles:12,place:"Sample Music Venue",desc:"Sample music listing used to test the Music filter.",detail:"Prototype sample only; not a verified live event.",source:"",verified:false}
 ];
-
 
 let cat="All";
-let saved=new Set();
 let surprise=null;
-
+let saved=new Set(JSON.parse(localStorage.getItem("weekendFunSaved")||"[]"));
+let myDay=new Set(JSON.parse(localStorage.getItem("weekendFunMyDay")||"[]"));
 const $=q=>document.querySelector(q);
 
+function store(){
+  localStorage.setItem("weekendFunSaved",JSON.stringify([...saved]));
+  localStorage.setItem("weekendFunMyDay",JSON.stringify([...myDay]));
+}
+
+function money(n){return n===0?"Free":"$"+n}
 
 function list(){
+  const d=+$("#distance").value;
+  const b=+$("#budget").value;
+  const q=$("#search").value.toLowerCase();
+  const day=$("#day").value;
+  const sort=$("#sort").value;
 
-const d=+$("#distance").value;
+  let out=events.filter(e=>
+    (cat==="All"||(cat==="Free"?e.price===0:e.cats.includes(cat))) &&
+    e.miles<=d &&
+    e.price<=b &&
+    (day==="All"||e.day.includes(day)) &&
+    (!q||(e.name+" "+e.place+" "+e.desc+" "+e.cats.join(" ")).toLowerCase().includes(q))
+  );
 
-const b=+$("#budget").value;
-
-const q=$("#search").value.toLowerCase();
-
-return events.filter(e=>
-
-(cat==="All" ||
-(cat==="Free"
-? e.price===0
-: e.cats.includes(cat)))
-
-&&
-
-e.miles<=d
-
-&&
-
-e.price<=b
-
-&&
-
-(
-!q ||
-
-(
-e.name+" "+
-e.place+" "+
-e.desc+" "+
-e.cats.join(" ")
-)
-.toLowerCase()
-.includes(q)
-
-)
-
-);
-
+  if(sort==="Nearest") out.sort((a,b)=>a.miles-b.miles);
+  if(sort==="Cheapest") out.sort((a,b)=>a.price-b.price||a.miles-b.miles);
+  if(sort==="Name") out.sort((a,b)=>a.name.localeCompare(b.name));
+  return out;
 }
-
-
-
-function money(n){
-
-return n===0
-? "Free"
-: "$"+n;
-
-}
-
-
 
 function card(e){
+  const label=e.cats.includes("Antiques")?"Antiques":e.cats.includes("Cars")?"Cars":e.cats.includes("Music")?"Music":e.cats.includes("Outdoors")?"Outdoors":e.cats.includes("Family")?"Family":"Market";
+  const inDay=myDay.has(e.id);
 
-const label=
-
-e.cats.includes("Antiques")
-? "Antiques"
-
-: e.cats.includes("Cars")
-? "Cars"
-
-: e.cats.includes("Music")
-? "Music"
-
-: e.cats.includes("Outdoors")
-? "Outdoors"
-
-: e.cats.includes("Family")
-? "Family"
-
-: "Market";
-
-
-return `
-
-<article class="card"
-
-${surprise===e.id
-? 'style="outline:3px solid var(--accent)"'
-: ''}
-
->
-
-<div class="cardvisual">
-
-<div class="bigemoji">
-${e.emoji}
-</div>
-
-<div class="visualtag">
-${label}
-</div>
-
-</div>
-
-
-<div class="cardtop">
-
-<div class="emoji">
-${e.emoji}
-</div>
-
-
-<div style="min-width:0">
-
-<div class="title">
-${e.name}
-</div>
-
-<div class="meta">
-
-${e.day}
-•
-${e.time}
-
-<br>
-
-${e.miles} mi
-•
-${money(e.price)}
-•
-${e.place}
-
-</div>
-
-
-<div class="desc">
-${e.desc}
-</div>
-
-</div>
-
-</div>
-
-
-<div class="buttons">
-
-<button data-detail="${e.id}">
-Details
-</button>
-
-
-<button
-data-save="${e.id}"
-class="${saved.has(e.id)
-? 'saved'
-: ''}"
->
-
-${saved.has(e.id)
-? "♥ Saved"
-: "♡ Save"}
-
-</button>
-
-
-<button data-plan="${e.id}">
-+ My Day
-</button>
-
-</div>
-
-</article>
-
-`;
-
+  return `<article class="card"${surprise===e.id?' style="outline:3px solid var(--accent)"':''}>
+    <div class="cardvisual">
+      <div class="bigemoji">${e.emoji}</div>
+      <div class="visualtag">${label}</div>
+    </div>
+    <div class="cardtop">
+      <div class="emoji">${e.emoji}</div>
+      <div style="min-width:0">
+        <div class="title">${e.name}</div>
+        <div class="meta">${e.day} • ${e.time}<br>${e.miles} mi • ${money(e.price)} • ${e.place}</div>
+        <div class="statusrow">
+          <span class="statuspill ${e.verified?"verified":"sample"}">${e.verified?"✓ Verified listing":"⚠ Sample listing"}</span>
+        </div>
+        <div class="desc">${e.desc}</div>
+      </div>
+    </div>
+    <div class="buttons">
+      <button data-detail="${e.id}">Details</button>
+      <button data-save="${e.id}" class="${saved.has(e.id)?'saved':''}">${saved.has(e.id)?"♥ Saved":"♡ Save"}</button>
+      <button data-plan="${e.id}">${inDay?"✓ In My Day":"+ My Day"}</button>
+    </div>
+  </article>`;
 }
-
-
 
 function bind(scope){
-
-scope
-.querySelectorAll("[data-detail]")
-.forEach(
-
-b=>
-
-b.onclick=
-()=>details(+b.dataset.detail)
-
-);
-
-
-scope
-.querySelectorAll("[data-save]")
-.forEach(
-
-b=>
-
-b.onclick=()=>{
-
-let id=+b.dataset.save;
-
-saved.has(id)
-? saved.delete(id)
-: saved.add(id);
-
-render();
-
-renderSaved();
-
+  scope.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>details(+b.dataset.detail));
+  scope.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{
+    const id=+b.dataset.save;
+    saved.has(id)?saved.delete(id):saved.add(id);
+    store(); render(); renderSaved();
+  });
+  scope.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{
+    const id=+b.dataset.plan;
+    myDay.has(id)?myDay.delete(id):myDay.add(id);
+    store(); render(); renderSaved(); renderPlanner();
+  });
 }
-
-);
-
-
-scope
-.querySelectorAll("[data-plan]")
-.forEach(
-
-b=>
-
-b.onclick=()=>
-
-makePlan(
-
-[
-events.find(
-e=>e.id===+b.dataset.plan
-)
-]
-
-)
-
-);
-
-}
-
-
 
 function render(){
-
-const a=list();
-
-$("#results").textContent=
-a.length+" results";
-
-$("#heroCount").textContent=
-"✨ "+
-a.length+
-" ideas waiting for you";
-
-
-$("#cards").innerHTML=
-
-a.length
-
-? a.map(card).join("")
-
-: '<div class="empty">No events match those filters.</div>';
-
-
-bind($("#cards"));
-
+  const a=list();
+  $("#results").textContent=a.length+" result"+(a.length===1?"":"s");
+  $("#heroCount").textContent="✨ "+a.length+" ideas waiting for you";
+  $("#cards").innerHTML=a.length?a.map(card).join(""):'<div class="empty">No events match those filters.</div>';
+  bind($("#cards"));
 }
-
-
 
 function renderSaved(){
-
-const a=
-events.filter(
-e=>saved.has(e.id)
-);
-
-$("#savedCount").textContent=
-a.length+" saved";
-
-
-$("#savedCards").innerHTML=
-
-a.length
-
-? a.map(card).join("")
-
-: '<div class="empty">Tap ♡ on an event you like.</div>';
-
-
-bind($("#savedCards"));
-
+  const a=events.filter(e=>saved.has(e.id));
+  $("#savedCount").textContent=a.length+" saved";
+  $("#savedCards").innerHTML=a.length?a.map(card).join(""):'<div class="empty">Tap ♡ on an event you like.</div>';
+  bind($("#savedCards"));
 }
 
+function renderPlanner(){
+  const picks=events.filter(e=>myDay.has(e.id));
+  const labels=["Morning","Afternoon","Evening","Later"];
+  $("#timeline").innerHTML=picks.length?picks.map((e,i)=>`
+    <div class="stop">
+      <div class="time">${labels[i]||"Stop"}</div>
+      <b>${e.emoji} ${e.name}</b>
+      <div class="meta">${e.time} • ${e.place} • ${money(e.price)}</div>
+      <button data-remove-day="${e.id}" class="removeDay" style="margin-top:6px;border:0;background:transparent;padding:0;font-weight:750">Remove</button>
+    </div>`).join(""):'<div class="empty">Your day is empty. Add events from Discover or tap Build My Saturday.</div>';
 
+  $("#timeline").querySelectorAll("[data-remove-day]").forEach(b=>b.onclick=()=>{
+    myDay.delete(+b.dataset.removeDay);
+    store(); render(); renderSaved(); renderPlanner();
+  });
+}
 
 function details(id){
-
-const e=
-events.find(
-x=>x.id===id
-);
-
-
-$("#detail").innerHTML=
-
-`
-
-<div class="detailEmoji">
-
-${e.emoji}
-
-</div>
-
-
-<div class="detailTitle">
-
-${e.name}
-
-</div>
-
-
-<p class="meta">
-
-${e.desc}
-
-</p>
-
-
-<div class="info">
-
-<b>When:</b>
-
-${e.day}
-•
-${e.time}
-
-</div>
-
-
-<div class="info">
-
-<b>Cost:</b>
-
-${money(e.price)}
-
-</div>
-
-
-<div class="info">
-
-<b>Distance:</b>
-
-about
-${e.miles}
-miles in this prototype
-
-</div>
-
-
-<div class="info">
-
-<b>Where:</b>
-
-${e.place}
-
-</div>
-
-
-<div class="info">
-
-<b>About:</b>
-
-${e.detail}
-
-</div>
-
-
-${e.source
-
-?
-
-`<a
-class="source"
-target="_blank"
-rel="noopener"
-href="${e.source}">
-
-Open Event Source
-
-</a>`
-
-:
-
-""
-
+  const e=events.find(x=>x.id===id);
+  const mapUrl="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(e.place+" Kansas City");
+  $("#detail").innerHTML=`
+    <div class="detailEmoji">${e.emoji}</div>
+    <div class="detailTitle">${e.name}</div>
+    <p class="meta">${e.desc}</p>
+    <div class="statusrow"><span class="statuspill ${e.verified?"verified":"sample"}">${e.verified?"✓ Verified listing":"⚠ Sample listing"}</span></div>
+    <div class="info"><b>When:</b> ${e.day} • ${e.time}</div>
+    <div class="info"><b>Cost:</b> ${money(e.price)}</div>
+    <div class="info"><b>Distance:</b> about ${e.miles} miles in this prototype</div>
+    <div class="info"><b>Where:</b> ${e.place}</div>
+    <div class="info"><b>About:</b> ${e.detail}</div>
+    <a class="source directions" target="_blank" rel="noopener" href="${mapUrl}">Get Directions</a>
+    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">Open Event Source</a>`:""}
+  `;
+  $("#modal").classList.add("show");
 }
-
-`;
-
-
-$("#modal")
-.classList
-.add("show");
-
-}
-
-
 
 function screen(id){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
+  document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("active",n.dataset.screen===id));
+  if(id==="planner") renderPlanner();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 
-document
-.querySelectorAll(".screen")
-.forEach(
+function buildPlan(){
+  let a=list().filter(e=>e.day.includes("Saturday")||e.day.includes("Friday–Sunday"));
+  if(!a.length)a=list();
 
-s=>
+  const picks=[];
+  const morning=a.find(e=>/6|8|9|10/.test(e.time))||a[0];
+  const afternoon=a.find(e=>e.id!==morning?.id&&(e.cats.includes("Markets")||e.time.includes("Daytime")));
+  const evening=a.find(e=>e.id!==morning?.id&&e.id!==afternoon?.id&&(e.cats.includes("Music")||/5|6|7/.test(e.time)));
+  [morning,afternoon,evening].forEach(e=>{if(e&&!picks.some(x=>x.id===e.id))picks.push(e)});
 
-s.classList.toggle(
-"active",
-s.id===id
-)
+  myDay=new Set(picks.map(e=>e.id));
+  store(); render(); renderSaved(); renderPlanner(); screen("planner");
+}
 
-);
-
-
-document
-.querySelectorAll(".nav")
-.forEach(
-
-n=>
-
-n.classList.toggle(
-"active",
-n.dataset.screen===id
-)
-
-);
-
-
-window.scrollTo({
-top:0,
-behavior:"smooth"
+$("#chips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+  $("#chips").querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); cat=b.dataset.cat; surprise=null; render();
 });
 
-}
-
-
-
-function makePlan(picks){
-
-if(!picks){
-
-let a=
-
-list()
-.filter(
-
-e=>
-
-e.day.includes("Saturday")
-
-||
-
-e.day.includes("Friday–Sunday")
-
-);
-
-
-if(!a.length)
-
-a=list();
-
-
-picks=
-
-[
-
-a[0],
-
-a.find(
-
-e=>
-
-e.id!==a[0]?.id
-
-&&
-
-e.cats.includes("Markets")
-
-),
-
-a.find(
-
-e=>
-
-e.id!==a[0]?.id
-
-&&
-
-e.cats.includes("Music")
-
-)
-
-]
-
-.filter(Boolean);
-
-}
-
-
-const labs=
-[
-"Morning",
-"Afternoon",
-"Evening"
-];
-
-
-$("#timeline").innerHTML=
-
-picks.length
-
-?
-
-picks.map(
-
-(e,i)=>
-
-`
-
-<div class="stop">
-
-<div class="time">
-
-${labs[i]||"Stop"}
-
-</div>
-
-
-<b>
-
-${e.emoji}
-
-${e.name}
-
-</b>
-
-
-<div class="meta">
-
-${e.time}
-•
-${e.place}
-•
-${money(e.price)}
-
-</div>
-
-</div>
-
-`
-
-).join("")
-
-:
-
-'<div class="empty">No matching events.</div>';
-
-
-screen("planner");
-
-}
-
-
-
-$("#chips")
-.querySelectorAll(".chip")
-.forEach(
-
-b=>
-
-b.onclick=()=>{
-
-$("#chips")
-.querySelectorAll(".chip")
-.forEach(
-
-x=>
-
-x.classList.remove("active")
-
-);
-
-
-b.classList.add("active");
-
-cat=b.dataset.cat;
-
-surprise=null;
-
-render();
-
-}
-
-);
-
-
-
-["distance","budget"]
-
-.forEach(
-
-id=>
-
-$("#"+id)
-.onchange=()=>{
-
-surprise=null;
-
-render();
-
-}
-
-);
-
-
-
-$("#search").oninput=
-()=>{
-
-surprise=null;
-
-render();
-
+["distance","budget","day","sort"].forEach(id=>$("#"+id).onchange=()=>{surprise=null;render()});
+$("#search").oninput=()=>{surprise=null;render()};
+
+$("#surprise").onclick=()=>{
+  const a=list();
+  if(a.length){surprise=a[Math.floor(Math.random()*a.length)].id;render();}
 };
 
+$("#build").onclick=buildPlan;
+$("#rebuild").onclick=buildPlan;
 
+document.querySelectorAll(".nav").forEach(b=>b.onclick=()=>screen(b.dataset.screen));
+$("#close").onclick=()=>$("#modal").classList.remove("show");
+$("#modal").onclick=e=>{if(e.target.id==="modal")$("#modal").classList.remove("show")};
 
-$("#surprise").onclick=
-()=>{
-
-let a=list();
-
-if(a.length){
-
-surprise=
-
-a[
-Math.floor(
-Math.random()*a.length
-)
-].id;
+$("#theme").onclick=()=>{
+  document.body.classList.toggle("dark");
+  $("#theme").textContent=document.body.classList.contains("dark")?"☀️":"🌙";
+};
 
 render();
-
-}
-
-};
-
-
-
-$("#build").onclick=
-()=>makePlan();
-
-
-$("#rebuild").onclick=
-()=>makePlan();
-
-
-
-document
-.querySelectorAll(".nav")
-.forEach(
-
-b=>
-
-b.onclick=
-()=>screen(
-b.dataset.screen
-)
-
-);
-
-
-
-$("#close").onclick=
-()=>$("#modal")
-.classList
-.remove("show");
-
-
-
-$("#modal").onclick=
-e=>{
-
-if(e.target.id==="modal")
-
-$("#modal")
-.classList
-.remove("show");
-
-};
-
-
-
-$("#theme").onclick=
-()=>{
-
-document.body
-.classList
-.toggle("dark");
-
-
-$("#theme").textContent=
-
-document.body
-.classList
-.contains("dark")
-
-? "☀️"
-
-: "🌙";
-
-};
-
-
-
-render();
-
 renderSaved();
-
-makePlan();
-
+renderPlanner();
 screen("discover");
-
 </script>
 
 </body>
