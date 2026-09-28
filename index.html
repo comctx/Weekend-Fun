@@ -79,6 +79,7 @@ nav button.active{color:var(--accent);background:var(--soft)}
 .statuspill.verified{color:#18794e}
 .statuspill.sample{color:#9a6700}
 .directions{color:#fff!important}
+.navHint{margin-top:7px;color:var(--muted);font-size:12px;line-height:1.4;text-align:center}
 .removeDay{color:#c43b54!important}
 .footer{text-align:center;color:var(--muted);font-size:11px;padding:20px 0}
 
@@ -571,7 +572,10 @@ function renderPlanner(){
 
 function details(id){
   const e=events.find(x=>x.id===id);
-  const mapUrl="https://www.google.com/maps/search/?api=1&query="+encodeURIComponent(e.place+" Kansas City");
+  const destination=e.place+" Kansas City";
+  const googleNavUrl="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving&dir_action=navigate";
+  const appleNavUrl="https://maps.apple.com/directions?destination="+encodeURIComponent(destination)+"&mode=driving&start=0";
+
   $("#detail").innerHTML=`
     <div class="detailEmoji">${e.emoji}</div>
     <div class="detailTitle">${e.name}</div>
@@ -582,12 +586,19 @@ function details(id){
     <div class="info"><b>Distance:</b> about ${e.miles} miles in this prototype</div>
     <div class="info"><b>Where:</b> ${e.place}</div>
     <div class="info"><b>About:</b> ${e.detail}</div>
-    <a class="source directions" target="_blank" rel="noopener" href="${mapUrl}">Get Directions</a>
+    <a id="voiceNavBtn" class="source directions" href="#">🔊 Start Voice Navigation</a>
+    <div class="navHint">On iPhone this opens Apple Maps. On other devices it opens Google Maps. Your maps app provides the spoken turn-by-turn directions.</div>
     ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">Open Event Source</a>`:""}
   `;
+
+  $("#voiceNavBtn").onclick=ev=>{
+    ev.preventDefault();
+    const isiPhone=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+    window.location.href=isiPhone?appleNavUrl:googleNavUrl;
+  };
+
   $("#modal").classList.add("show");
 }
-
 function screen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
   document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("active",n.dataset.screen===id));
