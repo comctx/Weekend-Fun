@@ -663,7 +663,7 @@ function card(e){
   const id=String(e.id);
   const inDay=myDay.has(id);
   const safeImage=(e.image||"").replace(/'/g,"%27");
-  const bg=safeImage?' style="background-image:url(\\''+safeImage+'\\')"':'';
+  const bg=safeImage ? ` style="background-image:url('${safeImage}')"` : "";
 
   return `<article class="card"${surprise===id?' style="outline:3px solid var(--accent)"':''}>
     <div class="cardvisual ${e.image?"liveImage":""}"${bg}>
@@ -797,6 +797,8 @@ function buildPlan(){
 }
 
 $("#searchArea").onclick=()=>{
+  const btn=$("#searchArea");
+  btn.textContent="🔎 Searching…";
   const value=$("#locationSearch").value.trim();
   if(!value || value.toLowerCase()==="current location"){
     $("#locationSearch").value="Kansas City, MO";
@@ -804,9 +806,10 @@ $("#searchArea").onclick=()=>{
     $("#areaNotice").innerHTML="Enter a <b>city, state</b> or a <b>ZIP code</b>, then tap Search This Area. I reset the old “Current location” value to Kansas City, MO.";
     currentArea="Kansas City, MO";
     localStorage.setItem("weekendFunArea",currentArea);
+    btn.textContent="🔎 Search This Area";
     return;
   }
-  loadLiveEvents(value);
+  loadLiveEvents(value).finally(()=>{ btn.textContent="🔎 Search This Area"; });
 };
 $("#locationSearch").addEventListener("keydown",e=>{
   if(e.key==="Enter") loadLiveEvents($("#locationSearch").value);
