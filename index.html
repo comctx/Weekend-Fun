@@ -592,7 +592,7 @@ async function loadLiveEvents(area){
 
   const notice=$("#areaNotice");
   const range=weekendRange();
-  $("#weekendTitle").textContent=range.title;
+  $("#weekendTitle").textContent="Live Events Near You";
 
   loading=true;
   events=[];
@@ -603,21 +603,24 @@ async function loadLiveEvents(area){
 
   const body={
     ...parseArea(currentArea),
-    radius:$("#distance").value,
-    startDateTime:range.start,
-    endDateTime:range.end
+    radius:$("#distance").value
   };
 
   try{
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),12000);
+
     const response=await fetch(SUPABASE_FUNCTION_URL,{
       method:"POST",
       headers:{
         "Content-Type":"application/json",
         "apikey":SUPABASE_PUBLISHABLE_KEY
       },
-      body:JSON.stringify(body)
+      body:JSON.stringify(body),
+      signal:controller.signal
     });
 
+    clearTimeout(timeoutId);
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
       const msg=data?.details?.fault?.faultstring||data?.error||("Request failed: "+response.status);
@@ -627,11 +630,14 @@ async function loadLiveEvents(area){
     events=(data?._embedded?.events||[]).map(normalizeTicketmaster);
 
     notice.innerHTML=events.length
-      ? "<b>"+events.length+" live Ticketmaster event"+(events.length===1?"":"s")+"</b> found near "+currentArea+" for this weekend."
-      : "No Ticketmaster events were found near <b>"+currentArea+"</b> for this weekend.";
+      ? "<b>"+events.length+" live Ticketmaster event"+(events.length===1?"":"s")+"</b> found near "+currentArea+"."
+      : "The live connection worked, but Ticketmaster returned no events near <b>"+currentArea+"</b>.";
   }catch(err){
     events=[];
-    notice.innerHTML="<b>Live event search could not load.</b> "+String(err.message||err);
+    const msg=err?.name==="AbortError"
+      ? "The live search timed out before Supabase answered."
+      : String(err.message||err);
+    notice.innerHTML="<b>Live event search could not load.</b> "+msg;
   }finally{
     loading=false;
     render();
