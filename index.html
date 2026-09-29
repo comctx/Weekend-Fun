@@ -243,6 +243,10 @@ Everything
 🎭 Theater
 </button>
 
+<button class="chip" data-cat="Community">
+🏘️ Community
+</button>
+
 </div>
 
 
@@ -436,6 +440,7 @@ class="close">
 
 <script>
 const SUPABASE_FUNCTION_URL="https://kwxdlaczsbtzfgejtejz.supabase.co/functions/v1/swift-endpoint";
+const SUPABASE_REST_URL="https://kwxdlaczsbtzfgejtejz.supabase.co/rest/v1/community_events";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_H4L02cHcdfZckmO6yrij1g_ntj2sCim";
 
 let events=[];
@@ -584,32 +589,69 @@ function normalizeTicketmaster(ev){
   };
 }
 
-async function loadLiveEvents(area){
-  currentArea=(area||"Kansas City, MO").trim();
-  localStorage.setItem("weekendFunArea",currentArea);
-  $("#locationSearch").value=currentArea;
-  $("#areaLabel").textContent=currentArea.toUpperCase();
 
-  const notice=$("#areaNotice");
-  const range=weekendRange();
-  $("#weekendTitle").textContent="Live Events Near You";
+function normalizeCommunityEvent(row){
+  const start=row.start_time?new Date(row.start_time):null;
+  const end=row.end_time?new Date(row.end_time):null;
+  const category=(row.category||"Community").trim()||"Community";
+  const lc=category.toLowerCase();
+  const cats=["Community"];
+  if(/music|concert/.test(lc)) cats.push("Music");
+  if(/sport|baseball|football|basketball|hockey|soccer|racing/.test(lc)) cats.push("Sports");
+  if(/theatre|theater|arts|comedy|broadway|performing/.test(lc)) cats.push("Theater");
+  if(/car|auto|motor|vehicle/.test(lc)) cats.push("Cars");
+  if(/antique|vintage/.test(lc)) cats.push("Antiques");
+  if(/market|flea|craft|expo|fair/.test(lc)) cats.push("Markets");
+  if(/family|children|kids/.test(lc)) cats.push("Family");
+  if(/outdoor|park|festival/.test(lc)) cats.push("Outdoors");
 
-  loading=true;
-  events=[];
-  surprise=null;
-  notice.classList.add("show");
-  notice.textContent="Looking for live events near "+currentArea+"…";
-  render();
+  const day=start
+    ? start.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"})
+    : "Date TBA";
+  const time=start
+    ? start.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})
+    : "Time TBA";
+  const endText=end
+    ? end.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})
+    : "";
 
-  const body={
-    ...parseArea(currentArea),
-    radius:$("#distance").value
+  const place=[row.venue_name,row.city,row.state].filter(Boolean).join(" • ")||"Community location";
+  const address=[row.address,row.city,row.state,row.zip_code].filter(Boolean).join(", ")||place;
+
+  return {
+    id:"community_"+row.id,
+    name:row.event_name||"Community Event",
+    emoji:emojiFor(cats),
+    cats:[...new Set(cats)],
+    day,
+    time:endText?time+"–"+endText:time,
+    price:row.price===null||row.price===undefined?null:Number(row.price),
+    miles:null,
+    place,
+    address,
+    desc:row.description||category,
+    detail:row.description||"Approved community event listing.",
+    source:row.event_url||"",
+    live:true,
+    image:row.image_url||"",
+    sourceType:"Community"
   };
+}
 
+function communityMatchesArea(row, area){
+  const parsed=parseArea(area);
+  if(parsed.postalCode) return String(row.zip_code||"").trim()===parsed.postalCode;
+  const rowCity=String(row.city||"").trim().toLowerCase();
+  const rowState=String(row.state||"").trim().toLowerCase();
+  const city=String(parsed.city||"").trim().toLowerCase();
+  const state=String(parsed.stateCode||"").trim().toLowerCase();
+  return rowCity===city && (!state || rowState===state);
+}
+
+async function fetchTicketmasterEvents(body){
+  const controller=new AbortController();
+  const timeoutId=setTimeout(()=>controller.abort(),12000);
   try{
-    const controller=new AbortController();
-    const timeoutId=setTimeout(()=>controller.abort(),12000);
-
     const response=await fetch(SUPABASE_FUNCTION_URL,{
       method:"POST",
       headers:{
@@ -619,31 +661,92 @@ async function loadLiveEvents(area){
       body:JSON.stringify(body),
       signal:controller.signal
     });
-
-    clearTimeout(timeoutId);
     const data=await response.json().catch(()=>({}));
     if(!response.ok){
       const msg=data?.details?.fault?.faultstring||data?.error||("Request failed: "+response.status);
       throw new Error(msg);
     }
-
-    events=(data?._embedded?.events||[]).map(normalizeTicketmaster);
-
-    notice.innerHTML=events.length
-      ? "<b>"+events.length+" live Ticketmaster event"+(events.length===1?"":"s")+"</b> found near "+currentArea+"."
-      : "The live connection worked, but Ticketmaster returned no events near <b>"+currentArea+"</b>.";
-  }catch(err){
-    events=[];
-    const msg=err?.name==="AbortError"
-      ? "The live search timed out before Supabase answered."
-      : String(err.message||err);
-    notice.innerHTML="<b>Live event search could not load.</b> "+msg;
+    return (data?._embedded?.events||[]).map(ev=>({
+      ...normalizeTicketmaster(ev),
+      sourceType:"Ticketmaster"
+    }));
   }finally{
-    loading=false;
-    render();
-    renderSaved();
-    renderPlanner();
+    clearTimeout(timeoutId);
   }
+}
+
+async function fetchCommunityEvents(area){
+  const controller=new AbortController();
+  const timeoutId=setTimeout(()=>controller.abort(),12000);
+  try{
+    const response=await fetch(SUPABASE_REST_URL+"?select=*&approved=eq.true&order=start_time.asc",{
+      headers:{
+        "apikey":SUPABASE_PUBLISHABLE_KEY,
+        "Accept":"application/json"
+      },
+      signal:controller.signal
+    });
+    const data=await response.json().catch(()=>[]);
+    if(!response.ok){
+      const msg=data?.message||data?.hint||("Community events request failed: "+response.status);
+      throw new Error(msg);
+    }
+    return (Array.isArray(data)?data:[])
+      .filter(row=>communityMatchesArea(row,area))
+      .map(normalizeCommunityEvent);
+  }finally{
+    clearTimeout(timeoutId);
+  }
+}
+
+async function loadLiveEvents(area){
+  currentArea=(area||"Kansas City, MO").trim();
+  localStorage.setItem("weekendFunArea",currentArea);
+  $("#locationSearch").value=currentArea;
+  $("#areaLabel").textContent=currentArea.toUpperCase();
+
+  const notice=$("#areaNotice");
+  $("#weekendTitle").textContent="Live Events Near You";
+
+  loading=true;
+  events=[];
+  surprise=null;
+  notice.classList.add("show");
+  notice.textContent="Looking for Ticketmaster and community events near "+currentArea+"…";
+  render();
+
+  const body={
+    ...parseArea(currentArea),
+    radius:$("#distance").value
+  };
+
+  const [tmResult, communityResult]=await Promise.allSettled([
+    fetchTicketmasterEvents(body),
+    fetchCommunityEvents(currentArea)
+  ]);
+
+  const tmEvents=tmResult.status==="fulfilled"?tmResult.value:[];
+  const communityEvents=communityResult.status==="fulfilled"?communityResult.value:[];
+  events=[...communityEvents,...tmEvents];
+
+  if(events.length){
+    const parts=[];
+    if(communityEvents.length) parts.push(communityEvents.length+" community");
+    if(tmEvents.length) parts.push(tmEvents.length+" Ticketmaster");
+    notice.innerHTML="<b>"+events.length+" live event"+(events.length===1?"":"s")+"</b> found near "+currentArea+" ("+parts.join(" + ")+").";
+  }else{
+    const errors=[];
+    if(communityResult.status==="rejected") errors.push("community: "+String(communityResult.reason?.message||communityResult.reason));
+    if(tmResult.status==="rejected") errors.push("Ticketmaster: "+String(tmResult.reason?.message||tmResult.reason));
+    notice.innerHTML=errors.length
+      ? "<b>Live event search could not fully load.</b> "+errors.join(" • ")
+      : "No approved community or Ticketmaster events were found near <b>"+currentArea+"</b>.";
+  }
+
+  loading=false;
+  render();
+  renderSaved();
+  renderPlanner();
 }
 
 function list(){
@@ -687,7 +790,7 @@ function card(e){
       <div style="min-width:0">
         <div class="title">${e.name}</div>
         <div class="meta">${e.day} • ${e.time}<br>${distanceText(e)} • ${money(e.price)} • ${e.place}</div>
-        <div class="statusrow"><span class="statuspill verified">✓ Live Ticketmaster</span></div>
+        <div class="statusrow"><span class="statuspill verified">${e.sourceType==="Community"?"✓ Approved community event":"✓ Live Ticketmaster"}</span></div>
         <div class="desc">${e.desc}</div>
       </div>
     </div>
@@ -727,7 +830,7 @@ function render(){
   $("#results").textContent=loading?"Loading…":a.length+" result"+(a.length===1?"":"s");
   $("#heroCount").textContent=loading?"🔎 Finding live events…":"✨ "+a.length+" ideas waiting for you";
   $("#cards").innerHTML=loading
-    ? '<div class="empty">Searching Ticketmaster for this weekend…</div>'
+    ? '<div class="empty">Searching Ticketmaster and approved community events…</div>'
     : a.length?a.map(card).join(""):'<div class="empty">No events match those filters.</div>';
   bind($("#cards"));
 }
@@ -771,7 +874,7 @@ function details(id){
     <div class="detailEmoji">${e.emoji}</div>
     <div class="detailTitle">${e.name}</div>
     <p class="meta">${e.desc}</p>
-    <div class="statusrow"><span class="statuspill verified">✓ Live Ticketmaster</span></div>
+    <div class="statusrow"><span class="statuspill verified">${e.sourceType==="Community"?"✓ Approved community event":"✓ Live Ticketmaster"}</span></div>
     <div class="info"><b>When:</b> ${e.day} • ${e.time}</div>
     <div class="info"><b>Cost:</b> ${money(e.price)}</div>
     <div class="info"><b>Area:</b> ${distanceText(e)}</div>
@@ -779,7 +882,7 @@ function details(id){
     <div class="info"><b>About:</b> ${e.detail}</div>
     <a id="voiceNavBtn" class="source directions" href="#">🔊 Start Voice Navigation</a>
     <div class="navHint">Your phone's Maps app provides the spoken turn-by-turn directions.</div>
-    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">View Event / Tickets</a>`:""}
+    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">${e.sourceType==="Community"?"Open Event Page":"View Event / Tickets"}</a>`:""}
   `;
 
   $("#voiceNavBtn").onclick=ev=>{
