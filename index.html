@@ -665,26 +665,26 @@ function card(e){
   const safeImage=(e.image||"").replace(/'/g,"%27");
   const bg=safeImage?' style="background-image:url(\\''+safeImage+'\\')"':'';
 
-  return \`<article class="card"\${surprise===id?' style="outline:3px solid var(--accent)"':''}>
-    <div class="cardvisual \${e.image?"liveImage":""}"\${bg}>
-      <div class="bigemoji">\${e.emoji}</div>
-      <div class="visualtag">\${label}</div>
+  return `<article class="card"${surprise===id?' style="outline:3px solid var(--accent)"':''}>
+    <div class="cardvisual ${e.image?"liveImage":""}"${bg}>
+      <div class="bigemoji">${e.emoji}</div>
+      <div class="visualtag">${label}</div>
     </div>
     <div class="cardtop">
-      <div class="emoji">\${e.emoji}</div>
+      <div class="emoji">${e.emoji}</div>
       <div style="min-width:0">
-        <div class="title">\${e.name}</div>
-        <div class="meta">\${e.day} • \${e.time}<br>\${distanceText(e)} • \${money(e.price)} • \${e.place}</div>
+        <div class="title">${e.name}</div>
+        <div class="meta">${e.day} • ${e.time}<br>${distanceText(e)} • ${money(e.price)} • ${e.place}</div>
         <div class="statusrow"><span class="statuspill verified">✓ Live Ticketmaster</span></div>
-        <div class="desc">\${e.desc}</div>
+        <div class="desc">${e.desc}</div>
       </div>
     </div>
     <div class="buttons">
-      <button data-detail="\${id}">Details</button>
-      <button data-save="\${id}" class="\${saved.has(id)?'saved':''}">\${saved.has(id)?"♥ Saved":"♡ Save"}</button>
-      <button data-plan="\${id}">\${inDay?"✓ In My Day":"+ My Day"}</button>
+      <button data-detail="${id}">Details</button>
+      <button data-save="${id}" class="${saved.has(id)?'saved':''}">${saved.has(id)?"♥ Saved":"♡ Save"}</button>
+      <button data-plan="${id}">${inDay?"✓ In My Day":"+ My Day"}</button>
     </div>
-  </article>\`;
+  </article>`;
 }
 
 function findEvent(id){
@@ -730,13 +730,13 @@ function renderSaved(){
 function renderPlanner(){
   const picks=events.filter(e=>myDay.has(String(e.id)));
   const labels=["Morning","Afternoon","Evening","Later"];
-  $("#timeline").innerHTML=picks.length?picks.map((e,i)=>\`
+  $("#timeline").innerHTML=picks.length?picks.map((e,i)=>`
     <div class="stop">
-      <div class="time">\${labels[i]||"Stop"}</div>
-      <b>\${e.emoji} \${e.name}</b>
-      <div class="meta">\${e.time} • \${e.place} • \${money(e.price)}</div>
-      <button data-remove-day="\${e.id}" class="removeDay" style="margin-top:6px;border:0;background:transparent;padding:0;font-weight:750">Remove</button>
-    </div>\`).join(""):'<div class="empty">Your day is empty. Add events from Discover or tap Build My Saturday.</div>';
+      <div class="time">${labels[i]||"Stop"}</div>
+      <b>${e.emoji} ${e.name}</b>
+      <div class="meta">${e.time} • ${e.place} • ${money(e.price)}</div>
+      <button data-remove-day="${e.id}" class="removeDay" style="margin-top:6px;border:0;background:transparent;padding:0;font-weight:750">Remove</button>
+    </div>`).join(""):'<div class="empty">Your day is empty. Add events from Discover or tap Build My Saturday.</div>';
 
   $("#timeline").querySelectorAll("[data-remove-day]").forEach(b=>b.onclick=()=>{
     myDay.delete(String(b.dataset.removeDay));
@@ -755,20 +755,20 @@ function details(id){
   const googleNavUrl="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving&dir_action=navigate";
   const appleNavUrl="https://maps.apple.com/?daddr="+encodeURIComponent(destination)+"&dirflg=d";
 
-  $("#detail").innerHTML=\`
-    <div class="detailEmoji">\${e.emoji}</div>
-    <div class="detailTitle">\${e.name}</div>
-    <p class="meta">\${e.desc}</p>
+  $("#detail").innerHTML=`
+    <div class="detailEmoji">${e.emoji}</div>
+    <div class="detailTitle">${e.name}</div>
+    <p class="meta">${e.desc}</p>
     <div class="statusrow"><span class="statuspill verified">✓ Live Ticketmaster</span></div>
-    <div class="info"><b>When:</b> \${e.day} • \${e.time}</div>
-    <div class="info"><b>Cost:</b> \${money(e.price)}</div>
-    <div class="info"><b>Area:</b> \${distanceText(e)}</div>
-    <div class="info"><b>Where:</b> \${e.place}</div>
-    <div class="info"><b>About:</b> \${e.detail}</div>
+    <div class="info"><b>When:</b> ${e.day} • ${e.time}</div>
+    <div class="info"><b>Cost:</b> ${money(e.price)}</div>
+    <div class="info"><b>Area:</b> ${distanceText(e)}</div>
+    <div class="info"><b>Where:</b> ${e.place}</div>
+    <div class="info"><b>About:</b> ${e.detail}</div>
     <a id="voiceNavBtn" class="source directions" href="#">🔊 Start Voice Navigation</a>
     <div class="navHint">Your phone's Maps app provides the spoken turn-by-turn directions.</div>
-    \${e.source?\`<a class="source" target="_blank" rel="noopener" href="\${e.source}">View Event / Tickets</a>\`:""}
-  \`;
+    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">View Event / Tickets</a>`:""}
+  `;
 
   $("#voiceNavBtn").onclick=ev=>{
     ev.preventDefault();
