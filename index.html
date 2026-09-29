@@ -465,9 +465,15 @@ function weekendRange(){
   const now=new Date();
   const dow=now.getDay();
   const friday=new Date(now);
-  let add=(5-dow+7)%7;
-  if(dow===6) add=-1;
-  if(dow===0) add=-2;
+
+  // Friday = current weekend, Saturday = current weekend,
+  // Sunday through Thursday = the upcoming weekend.
+  let add;
+  if(dow===5) add=0;
+  else if(dow===6) add=-1;
+  else if(dow===0) add=5;
+  else add=5-dow;
+
   friday.setDate(now.getDate()+add);
   friday.setHours(0,0,0,0);
 
