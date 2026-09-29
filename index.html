@@ -47,6 +47,9 @@ main{padding:15px}
 .cardvisual{height:118px;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--soft),var(--line));display:flex;align-items:flex-end;padding:12px}
 .cardvisual:after{content:"";position:absolute;width:160px;height:160px;border-radius:50%;right:-55px;top:-60px;background:rgba(255,255,255,.18)}
 .cardvisual .bigemoji{font-size:64px;filter:drop-shadow(0 5px 8px rgba(0,0,0,.12));z-index:1}
+.cardvisual.liveImage{background-size:cover;background-position:center}
+.cardvisual.liveImage:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 28%,rgba(0,0,0,.58))}
+.cardvisual.liveImage .bigemoji{display:none}
 .visualtag{position:absolute;right:12px;bottom:12px;z-index:2;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;padding:5px 8px;font-size:11px;font-weight:800}
 .cardtop{display:flex;gap:12px;padding:13px}
 .emoji{width:56px;height:56px;display:grid;place-items:center;border-radius:14px;background:var(--soft);font-size:27px;flex:0 0 auto}
@@ -121,7 +124,7 @@ nav button.active{color:var(--accent);background:var(--soft)}
     <span id="areaLabel">KANSAS CITY AREA</span> • TEST BUILD
   </div>
 
-  <h2>This Weekend: Oct. 2–4</h2>
+  <h2 id="weekendTitle">This Weekend</h2>
 
   <p>
     Antiques, cars, flea markets, music, family activities and more.
@@ -157,10 +160,10 @@ nav button.active{color:var(--accent);background:var(--soft)}
 <label>Budget</label>
 
 <select id="budget">
-<option value="999">Any price</option>
+<option value="999" selected>Any price</option>
 <option value="0">Free only</option>
 <option value="10">$10 or less</option>
-<option value="25" selected>$25 or less</option>
+<option value="25">$25 or less</option>
 </select>
 
 </div>
@@ -230,6 +233,14 @@ Everything
 
 <button class="chip" data-cat="Outdoors">
 🌳 Outdoors
+</button>
+
+<button class="chip" data-cat="Sports">
+🏟️ Sports
+</button>
+
+<button class="chip" data-cat="Theater">
+🎭 Theater
 </button>
 
 </div>
@@ -424,181 +435,346 @@ class="close">
 
 
 <script>
-const events=[
-{id:1,name:"Vintage Market Days of Kansas City",emoji:"🕰️",cats:["Antiques","Markets"],day:"Friday–Sunday",time:"Fri–Sun",price:12,miles:8,place:"American Royal • West Bottoms",desc:"Large vintage and antique market with furniture, jewelry, art, handmade goods and food.",detail:"Runs Oct. 2–4, 2026. Saturday is listed as 10 AM–4 PM and Sunday 10 AM–3 PM.",source:"https://www.vintagemarketdays.com/market/kansas-city/index.php",verified:true},
-{id:2,name:"Merchant Square Fall Open House",emoji:"🚗",cats:["Cars","Markets","Free","Music"],day:"Saturday",time:"10 AM–8 PM",price:0,miles:15,place:"Merchant Square • Independence",desc:"Shopping, food, live music and a car show with hundreds of vendors.",detail:"The event advertises 400+ vendors, an evening car show and live music.",source:"https://merchantsquareantiques.com/events/fall-open-house-at-merchant-square-kc-food-shopping-car-show-live-music-free-eve",verified:true},
-{id:3,name:"West Bottoms First Festival Weekend",emoji:"🏚️",cats:["Antiques","Markets","Free"],day:"Friday–Sunday",time:"Daytime",price:0,miles:8,place:"West Bottoms",desc:"Multiple vintage and antique warehouses open together for first-weekend shopping.",detail:"Good for vintage furniture, collectibles, decor, tools and unusual finds.",source:"https://www.fleamapket.com/listing/first-friday-festival-weekends-at-west-bottoms/",verified:true},
-{id:4,name:"Super Flea",emoji:"🧰",cats:["Markets"],day:"Saturday–Sunday",time:"8:30 AM–4 PM",price:2,miles:9,place:"6200 St. John Ave",desc:"Indoor flea market with tools, collectibles, household goods and bargains.",detail:"Traditional indoor flea market with many types of merchandise.",source:"",verified:true},
-{id:5,name:"Boulevard Swap 'n' Shop",emoji:"🛍️",cats:["Markets"],day:"Saturday–Sunday",time:"6 AM–2 PM",price:1,miles:13,place:"Boulevard Drive-In",desc:"Outdoor swap meet with garage-sale-style bargains.",detail:"Best for early shoppers who like browsing miscellaneous sellers.",source:"",verified:true},
-{id:6,name:"Relic Auctions Card Show",emoji:"🏈",cats:["Markets","Free","Family"],day:"Saturday–Sunday",time:"Sat 9–5 • Sun 10–3",price:0,miles:18,place:"Kansas City area",desc:"Sports cards, Pokémon and other trading cards and collectibles.",detail:"Collectibles-focused show listed for Oct. 3–4 with free admission.",source:"https://tcgshowsnearme.com/events/in/usa/next-30-days",verified:true},
-{id:7,name:"Lakeside Fall Walk",emoji:"🌳",cats:["Outdoors","Free","Family"],day:"Saturday",time:"Anytime",price:0,miles:22,place:"Sample Recreation Area",desc:"Sample outdoor listing used to test the Outdoors filter.",detail:"Prototype sample only; not a verified live event.",source:"",verified:false},
-{id:8,name:"Live Music Patio Night",emoji:"🎵",cats:["Music"],day:"Saturday",time:"6:30 PM",price:15,miles:12,place:"Sample Music Venue",desc:"Sample music listing used to test the Music filter.",detail:"Prototype sample only; not a verified live event.",source:"",verified:false}
-];
+const SUPABASE_FUNCTION_URL="https://kwxdlaczsbtzfgejtejz.supabase.co/functions/v1/swift-endpoint";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_H4L02cHcdfZckmO6yrij1g_ntj2sCim";
 
+let events=[];
 let cat="All";
 let surprise=null;
-let saved=new Set(JSON.parse(localStorage.getItem("weekendFunSaved")||"[]"));
-let myDay=new Set(JSON.parse(localStorage.getItem("weekendFunMyDay")||"[]"));
+let loading=false;
+let saved=new Set((JSON.parse(localStorage.getItem("weekendFunSaved")||"[]")||[]).map(String));
+let myDay=new Set((JSON.parse(localStorage.getItem("weekendFunMyDay")||"[]")||[]).map(String));
 const $=q=>document.querySelector(q);
 let currentArea=localStorage.getItem("weekendFunArea")||"Kansas City, MO";
-let kcDemo=true;
-
-function isKansasCityArea(value){
-  const v=(value||"").toLowerCase().trim();
-  return v.includes("kansas city") || v.includes("liberty, mo") || v.includes("independence, mo") ||
-         v.startsWith("641") || v.startsWith("640");
-}
-
-function applyArea(value){
-  currentArea=(value||"Kansas City, MO").trim();
-  localStorage.setItem("weekendFunArea",currentArea);
-  $("#locationSearch").value=currentArea;
-  $("#areaLabel").textContent=currentArea.toUpperCase();
-  kcDemo=isKansasCityArea(currentArea);
-  const notice=$("#areaNotice");
-  if(kcDemo){
-    notice.classList.remove("show");
-    notice.textContent="";
-  }else{
-    notice.classList.add("show");
-    notice.innerHTML="<b>"+currentArea+"</b> is selected. The location search is working, but this prototype only has Kansas City-area event data right now. The next step is connecting live event feeds so events load automatically for any city or ZIP code.";
-  }
-  surprise=null;
-  render();
-}
 
 function store(){
   localStorage.setItem("weekendFunSaved",JSON.stringify([...saved]));
   localStorage.setItem("weekendFunMyDay",JSON.stringify([...myDay]));
 }
 
-function money(n){return n===0?"Free":"$"+n}
+function money(n){
+  if(n===null||n===undefined||Number.isNaN(Number(n))) return "Price varies";
+  return Number(n)===0?"Free":"From $"+Math.round(Number(n));
+}
+
+function weekendRange(){
+  const now=new Date();
+  const dow=now.getDay();
+  const friday=new Date(now);
+  let add=(5-dow+7)%7;
+  if(dow===6) add=-1;
+  if(dow===0) add=-2;
+  friday.setDate(now.getDate()+add);
+  friday.setHours(0,0,0,0);
+
+  const sunday=new Date(friday);
+  sunday.setDate(friday.getDate()+2);
+
+  const endExclusive=new Date(friday);
+  endExclusive.setDate(friday.getDate()+3);
+
+  const fmt=d=>d.toLocaleDateString("en-US",{month:"short",day:"numeric"});
+  return {
+    start:friday.toISOString(),
+    end:endExclusive.toISOString(),
+    title:"This Weekend: "+fmt(friday)+"–"+sunday.getDate()
+  };
+}
+
+function parseArea(value){
+  const v=(value||"").trim();
+  if(/^\d{5}(-\d{4})?$/.test(v)) return {postalCode:v.slice(0,5)};
+  const parts=v.split(",").map(x=>x.trim()).filter(Boolean);
+  if(parts.length>=2){
+    const stateMatch=parts[parts.length-1].match(/[A-Za-z]{2}/);
+    return {
+      city:parts.slice(0,-1).join(", "),
+      stateCode:stateMatch?stateMatch[0].toUpperCase():parts[parts.length-1]
+    };
+  }
+  return {city:v||"Kansas City",stateCode:"MO"};
+}
+
+function pickImage(ev){
+  const imgs=[...(ev.images||[])];
+  imgs.sort((a,b)=>(b.width||0)-(a.width||0));
+  return imgs[0]?.url||"";
+}
+
+function formatTime(t){
+  if(!t) return "Time TBA";
+  const parts=t.split(":").map(Number);
+  if(Number.isNaN(parts[0])) return t;
+  const d=new Date();
+  d.setHours(parts[0],parts[1]||0,0,0);
+  return d.toLocaleTimeString("en-US",{hour:"numeric",minute:parts[1]?"2-digit":undefined});
+}
+
+function classify(ev){
+  const c=ev.classifications?.[0]||{};
+  const text=[ev.name,c.segment?.name,c.genre?.name,c.subGenre?.name].filter(Boolean).join(" ").toLowerCase();
+  const cats=[];
+  if(/music|concert/.test(text)) cats.push("Music");
+  if(/sport|baseball|football|basketball|hockey|soccer|racing/.test(text)) cats.push("Sports");
+  if(/theatre|theater|arts|comedy|broadway|performing/.test(text)) cats.push("Theater");
+  if(/car|auto|motor|vehicle/.test(text)) cats.push("Cars");
+  if(/antique|vintage/.test(text)) cats.push("Antiques");
+  if(/market|flea|craft|expo|fair/.test(text)) cats.push("Markets");
+  if(/family|children|kids/.test(text)) cats.push("Family");
+  if(/outdoor|park|festival/.test(text)) cats.push("Outdoors");
+  if(!cats.length) cats.push("Event");
+  return [...new Set(cats)];
+}
+
+function emojiFor(cats){
+  if(cats.includes("Music")) return "🎵";
+  if(cats.includes("Sports")) return "🏟️";
+  if(cats.includes("Theater")) return "🎭";
+  if(cats.includes("Cars")) return "🚗";
+  if(cats.includes("Antiques")) return "🕰️";
+  if(cats.includes("Markets")) return "🛍️";
+  if(cats.includes("Family")) return "👨‍👩‍👧";
+  if(cats.includes("Outdoors")) return "🌳";
+  return "🎟️";
+}
+
+function normalizeTicketmaster(ev){
+  const venue=ev._embedded?.venues?.[0]||{};
+  const cats=classify(ev);
+  const pr=ev.priceRanges?.[0];
+  const price=pr?.min!=null?Number(pr.min):null;
+
+  let day="Date TBA";
+  const localDate=ev.dates?.start?.localDate;
+  if(localDate){
+    const d=new Date(localDate+"T12:00:00");
+    day=d.toLocaleDateString("en-US",{weekday:"long",month:"short",day:"numeric"});
+  }
+
+  const place=[venue.name,venue.city?.name,venue.state?.stateCode].filter(Boolean).join(" • ")||"Venue TBA";
+  const address=[venue.address?.line1,venue.city?.name,venue.state?.stateCode,venue.postalCode].filter(Boolean).join(", ")||place;
+  const desc=[ev.classifications?.[0]?.segment?.name,ev.classifications?.[0]?.genre?.name].filter(Boolean).join(" • ")||"Live event";
+
+  return {
+    id:"tm_"+ev.id,
+    name:ev.name||"Untitled Event",
+    emoji:emojiFor(cats),
+    cats,
+    day,
+    time:formatTime(ev.dates?.start?.localTime),
+    price,
+    miles:ev.distance!=null?Number(ev.distance):null,
+    place,
+    address,
+    desc,
+    detail:"Live Ticketmaster event listing. Event details, availability and prices may change.",
+    source:ev.url||"",
+    live:true,
+    image:pickImage(ev)
+  };
+}
+
+async function loadLiveEvents(area){
+  currentArea=(area||"Kansas City, MO").trim();
+  localStorage.setItem("weekendFunArea",currentArea);
+  $("#locationSearch").value=currentArea;
+  $("#areaLabel").textContent=currentArea.toUpperCase();
+
+  const notice=$("#areaNotice");
+  const range=weekendRange();
+  $("#weekendTitle").textContent=range.title;
+
+  loading=true;
+  events=[];
+  surprise=null;
+  notice.classList.add("show");
+  notice.textContent="Looking for live events near "+currentArea+"…";
+  render();
+
+  const body={
+    ...parseArea(currentArea),
+    radius:$("#distance").value,
+    startDateTime:range.start,
+    endDateTime:range.end
+  };
+
+  try{
+    const response=await fetch(SUPABASE_FUNCTION_URL,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "apikey":SUPABASE_PUBLISHABLE_KEY,
+        "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY
+      },
+      body:JSON.stringify(body)
+    });
+
+    const data=await response.json().catch(()=>({}));
+    if(!response.ok){
+      const msg=data?.details?.fault?.faultstring||data?.error||("Request failed: "+response.status);
+      throw new Error(msg);
+    }
+
+    events=(data?._embedded?.events||[]).map(normalizeTicketmaster);
+
+    notice.innerHTML=events.length
+      ? "<b>"+events.length+" live Ticketmaster event"+(events.length===1?"":"s")+"</b> found near "+currentArea+" for this weekend."
+      : "No Ticketmaster events were found near <b>"+currentArea+"</b> for this weekend.";
+  }catch(err){
+    events=[];
+    notice.innerHTML="<b>Live event search could not load.</b> "+String(err.message||err);
+  }finally{
+    loading=false;
+    render();
+    renderSaved();
+    renderPlanner();
+  }
+}
 
 function list(){
-  if(!kcDemo) return [];
-  const d=+$("#distance").value;
   const b=+$("#budget").value;
   const q=$("#search").value.toLowerCase();
   const day=$("#day").value;
   const sort=$("#sort").value;
 
-  let out=events.filter(e=>
-    (cat==="All"||(cat==="Free"?e.price===0:e.cats.includes(cat))) &&
-    e.miles<=d &&
-    e.price<=b &&
-    (day==="All"||e.day.includes(day)) &&
-    (!q||(e.name+" "+e.place+" "+e.desc+" "+e.cats.join(" ")).toLowerCase().includes(q))
-  );
+  let out=events.filter(e=>{
+    const catOk=cat==="All"||(cat==="Free"?e.price===0:e.cats.includes(cat));
+    const priceOk=b===999?true:(e.price!=null&&Number(e.price)<=b);
+    const dayOk=day==="All"||e.day.includes(day);
+    const qOk=!q||(e.name+" "+e.place+" "+e.desc+" "+e.cats.join(" ")).toLowerCase().includes(q);
+    return catOk&&priceOk&&dayOk&&qOk;
+  });
 
-  if(sort==="Nearest") out.sort((a,b)=>a.miles-b.miles);
-  if(sort==="Cheapest") out.sort((a,b)=>a.price-b.price||a.miles-b.miles);
+  if(sort==="Nearest") out.sort((a,b)=>(a.miles??9999)-(b.miles??9999));
+  if(sort==="Cheapest") out.sort((a,b)=>(a.price??999999)-(b.price??999999));
   if(sort==="Name") out.sort((a,b)=>a.name.localeCompare(b.name));
   return out;
 }
 
-function card(e){
-  const label=e.cats.includes("Antiques")?"Antiques":e.cats.includes("Cars")?"Cars":e.cats.includes("Music")?"Music":e.cats.includes("Outdoors")?"Outdoors":e.cats.includes("Family")?"Family":"Market";
-  const inDay=myDay.has(e.id);
+function distanceText(e){
+  return e.miles!=null?Math.round(e.miles)+" mi":"Local area";
+}
 
-  return `<article class="card"${surprise===e.id?' style="outline:3px solid var(--accent)"':''}>
-    <div class="cardvisual">
-      <div class="bigemoji">${e.emoji}</div>
-      <div class="visualtag">${label}</div>
+function card(e){
+  const label=e.cats.find(x=>["Antiques","Cars","Markets","Music","Family","Outdoors","Sports","Theater"].includes(x))||"Event";
+  const id=String(e.id);
+  const inDay=myDay.has(id);
+  const safeImage=(e.image||"").replace(/'/g,"%27");
+  const bg=safeImage?' style="background-image:url(\\''+safeImage+'\\')"':'';
+
+  return \`<article class="card"\${surprise===id?' style="outline:3px solid var(--accent)"':''}>
+    <div class="cardvisual \${e.image?"liveImage":""}"\${bg}>
+      <div class="bigemoji">\${e.emoji}</div>
+      <div class="visualtag">\${label}</div>
     </div>
     <div class="cardtop">
-      <div class="emoji">${e.emoji}</div>
+      <div class="emoji">\${e.emoji}</div>
       <div style="min-width:0">
-        <div class="title">${e.name}</div>
-        <div class="meta">${e.day} • ${e.time}<br>${e.miles} mi • ${money(e.price)} • ${e.place}</div>
-        <div class="statusrow">
-          <span class="statuspill ${e.verified?"verified":"sample"}">${e.verified?"✓ Verified listing":"⚠ Sample listing"}</span>
-        </div>
-        <div class="desc">${e.desc}</div>
+        <div class="title">\${e.name}</div>
+        <div class="meta">\${e.day} • \${e.time}<br>\${distanceText(e)} • \${money(e.price)} • \${e.place}</div>
+        <div class="statusrow"><span class="statuspill verified">✓ Live Ticketmaster</span></div>
+        <div class="desc">\${e.desc}</div>
       </div>
     </div>
     <div class="buttons">
-      <button data-detail="${e.id}">Details</button>
-      <button data-save="${e.id}" class="${saved.has(e.id)?'saved':''}">${saved.has(e.id)?"♥ Saved":"♡ Save"}</button>
-      <button data-plan="${e.id}">${inDay?"✓ In My Day":"+ My Day"}</button>
+      <button data-detail="\${id}">Details</button>
+      <button data-save="\${id}" class="\${saved.has(id)?'saved':''}">\${saved.has(id)?"♥ Saved":"♡ Save"}</button>
+      <button data-plan="\${id}">\${inDay?"✓ In My Day":"+ My Day"}</button>
     </div>
-  </article>`;
+  </article>\`;
+}
+
+function findEvent(id){
+  return events.find(e=>String(e.id)===String(id));
 }
 
 function bind(scope){
-  scope.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>details(+b.dataset.detail));
+  scope.querySelectorAll("[data-detail]").forEach(b=>b.onclick=()=>details(b.dataset.detail));
   scope.querySelectorAll("[data-save]").forEach(b=>b.onclick=()=>{
-    const id=+b.dataset.save;
+    const id=String(b.dataset.save);
     saved.has(id)?saved.delete(id):saved.add(id);
-    store(); render(); renderSaved();
+    store();
+    render();
+    renderSaved();
   });
   scope.querySelectorAll("[data-plan]").forEach(b=>b.onclick=()=>{
-    const id=+b.dataset.plan;
+    const id=String(b.dataset.plan);
     myDay.has(id)?myDay.delete(id):myDay.add(id);
-    store(); render(); renderSaved(); renderPlanner();
+    store();
+    render();
+    renderSaved();
+    renderPlanner();
   });
 }
 
 function render(){
   const a=list();
-  $("#results").textContent=a.length+" result"+(a.length===1?"":"s");
-  $("#heroCount").textContent="✨ "+a.length+" ideas waiting for you";
-  $("#cards").innerHTML=a.length?a.map(card).join(""):'<div class="empty">No events match those filters.</div>';
+  $("#results").textContent=loading?"Loading…":a.length+" result"+(a.length===1?"":"s");
+  $("#heroCount").textContent=loading?"🔎 Finding live events…":"✨ "+a.length+" ideas waiting for you";
+  $("#cards").innerHTML=loading
+    ? '<div class="empty">Searching Ticketmaster for this weekend…</div>'
+    : a.length?a.map(card).join(""):'<div class="empty">No events match those filters.</div>';
   bind($("#cards"));
 }
 
 function renderSaved(){
-  const a=events.filter(e=>saved.has(e.id));
+  const a=events.filter(e=>saved.has(String(e.id)));
   $("#savedCount").textContent=a.length+" saved";
   $("#savedCards").innerHTML=a.length?a.map(card).join(""):'<div class="empty">Tap ♡ on an event you like.</div>';
   bind($("#savedCards"));
 }
 
 function renderPlanner(){
-  const picks=events.filter(e=>myDay.has(e.id));
+  const picks=events.filter(e=>myDay.has(String(e.id)));
   const labels=["Morning","Afternoon","Evening","Later"];
-  $("#timeline").innerHTML=picks.length?picks.map((e,i)=>`
+  $("#timeline").innerHTML=picks.length?picks.map((e,i)=>\`
     <div class="stop">
-      <div class="time">${labels[i]||"Stop"}</div>
-      <b>${e.emoji} ${e.name}</b>
-      <div class="meta">${e.time} • ${e.place} • ${money(e.price)}</div>
-      <button data-remove-day="${e.id}" class="removeDay" style="margin-top:6px;border:0;background:transparent;padding:0;font-weight:750">Remove</button>
-    </div>`).join(""):'<div class="empty">Your day is empty. Add events from Discover or tap Build My Saturday.</div>';
+      <div class="time">\${labels[i]||"Stop"}</div>
+      <b>\${e.emoji} \${e.name}</b>
+      <div class="meta">\${e.time} • \${e.place} • \${money(e.price)}</div>
+      <button data-remove-day="\${e.id}" class="removeDay" style="margin-top:6px;border:0;background:transparent;padding:0;font-weight:750">Remove</button>
+    </div>\`).join(""):'<div class="empty">Your day is empty. Add events from Discover or tap Build My Saturday.</div>';
 
   $("#timeline").querySelectorAll("[data-remove-day]").forEach(b=>b.onclick=()=>{
-    myDay.delete(+b.dataset.removeDay);
-    store(); render(); renderSaved(); renderPlanner();
+    myDay.delete(String(b.dataset.removeDay));
+    store();
+    render();
+    renderSaved();
+    renderPlanner();
   });
 }
 
 function details(id){
-  const e=events.find(x=>x.id===id);
-  const destination=e.place+" Kansas City";
-  const googleNavUrl="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving&dir_action=navigate";
-  const appleNavUrl="https://maps.apple.com/directions?destination="+encodeURIComponent(destination)+"&mode=driving&start=0";
+  const e=findEvent(id);
+  if(!e) return;
 
-  $("#detail").innerHTML=`
-    <div class="detailEmoji">${e.emoji}</div>
-    <div class="detailTitle">${e.name}</div>
-    <p class="meta">${e.desc}</p>
-    <div class="statusrow"><span class="statuspill ${e.verified?"verified":"sample"}">${e.verified?"✓ Verified listing":"⚠ Sample listing"}</span></div>
-    <div class="info"><b>When:</b> ${e.day} • ${e.time}</div>
-    <div class="info"><b>Cost:</b> ${money(e.price)}</div>
-    <div class="info"><b>Distance:</b> about ${e.miles} miles in this prototype</div>
-    <div class="info"><b>Where:</b> ${e.place}</div>
-    <div class="info"><b>About:</b> ${e.detail}</div>
+  const destination=e.address||e.place||currentArea;
+  const googleNavUrl="https://www.google.com/maps/dir/?api=1&destination="+encodeURIComponent(destination)+"&travelmode=driving&dir_action=navigate";
+  const appleNavUrl="https://maps.apple.com/?daddr="+encodeURIComponent(destination)+"&dirflg=d";
+
+  $("#detail").innerHTML=\`
+    <div class="detailEmoji">\${e.emoji}</div>
+    <div class="detailTitle">\${e.name}</div>
+    <p class="meta">\${e.desc}</p>
+    <div class="statusrow"><span class="statuspill verified">✓ Live Ticketmaster</span></div>
+    <div class="info"><b>When:</b> \${e.day} • \${e.time}</div>
+    <div class="info"><b>Cost:</b> \${money(e.price)}</div>
+    <div class="info"><b>Area:</b> \${distanceText(e)}</div>
+    <div class="info"><b>Where:</b> \${e.place}</div>
+    <div class="info"><b>About:</b> \${e.detail}</div>
     <a id="voiceNavBtn" class="source directions" href="#">🔊 Start Voice Navigation</a>
-    <div class="navHint">On iPhone this opens Apple Maps. On other devices it opens Google Maps. Your maps app provides the spoken turn-by-turn directions.</div>
-    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">Open Event Source</a>`:""}
-  `;
+    <div class="navHint">Your phone's Maps app provides the spoken turn-by-turn directions.</div>
+    \${e.source?\`<a class="source" target="_blank" rel="noopener" href="\${e.source}">View Event / Tickets</a>\`:""}
+  \`;
 
   $("#voiceNavBtn").onclick=ev=>{
     ev.preventDefault();
     const isiPhone=/iPhone|iPad|iPod/i.test(navigator.userAgent);
     window.location.href=isiPhone?appleNavUrl:googleNavUrl;
   };
-
   $("#modal").classList.add("show");
 }
+
 function screen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.toggle("active",s.id===id));
   document.querySelectorAll(".nav").forEach(n=>n.classList.toggle("active",n.dataset.screen===id));
@@ -607,23 +783,19 @@ function screen(id){
 }
 
 function buildPlan(){
-  let a=list().filter(e=>e.day.includes("Saturday")||e.day.includes("Friday–Sunday"));
-  if(!a.length)a=list();
-
-  const picks=[];
-  const morning=a.find(e=>/6|8|9|10/.test(e.time))||a[0];
-  const afternoon=a.find(e=>e.id!==morning?.id&&(e.cats.includes("Markets")||e.time.includes("Daytime")));
-  const evening=a.find(e=>e.id!==morning?.id&&e.id!==afternoon?.id&&(e.cats.includes("Music")||/5|6|7/.test(e.time)));
-  [morning,afternoon,evening].forEach(e=>{if(e&&!picks.some(x=>x.id===e.id))picks.push(e)});
-
-  myDay=new Set(picks.map(e=>e.id));
-  store(); render(); renderSaved(); renderPlanner(); screen("planner");
+  let a=list().filter(e=>e.day.includes("Saturday"));
+  if(!a.length) a=list();
+  myDay=new Set(a.slice(0,3).map(e=>String(e.id)));
+  store();
+  render();
+  renderSaved();
+  renderPlanner();
+  screen("planner");
 }
 
-$("#searchArea").onclick=()=>applyArea($("#locationSearch").value);
-
+$("#searchArea").onclick=()=>loadLiveEvents($("#locationSearch").value);
 $("#locationSearch").addEventListener("keydown",e=>{
-  if(e.key==="Enter") applyArea($("#locationSearch").value);
+  if(e.key==="Enter") loadLiveEvents($("#locationSearch").value);
 });
 
 $("#useLocation").onclick=()=>{
@@ -636,20 +808,14 @@ $("#useLocation").onclick=()=>{
   btn.textContent="📍 Finding location…";
   navigator.geolocation.getCurrentPosition(
     pos=>{
-      currentArea="Current location";
-      localStorage.setItem("weekendFunArea",currentArea);
-      $("#locationSearch").value=currentArea;
-      $("#areaLabel").textContent="CURRENT LOCATION";
-      kcDemo=false;
-      $("#areaNotice").classList.add("show");
-      $("#areaNotice").innerHTML="Current location selected ("+pos.coords.latitude.toFixed(3)+", "+pos.coords.longitude.toFixed(3)+"). The live event-data connection is the next step; once connected, Weekend Fun can load nearby events from these coordinates automatically.";
       btn.textContent="📍 Use My Location";
-      render();
+      $("#areaNotice").classList.add("show");
+      $("#areaNotice").innerHTML="Location found. For now, enter your city or ZIP above to load nearby live events.";
     },
     ()=>{
-      $("#areaNotice").classList.add("show");
-      $("#areaNotice").textContent="I couldn't get your location. You can still type a city, state or ZIP code above.";
       btn.textContent="📍 Use My Location";
+      $("#areaNotice").classList.add("show");
+      $("#areaNotice").textContent="I couldn't get your location. Enter your city or ZIP code above.";
     },
     {enableHighAccuracy:false,timeout:10000,maximumAge:300000}
   );
@@ -657,15 +823,22 @@ $("#useLocation").onclick=()=>{
 
 $("#chips").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
   $("#chips").querySelectorAll(".chip").forEach(x=>x.classList.remove("active"));
-  b.classList.add("active"); cat=b.dataset.cat; surprise=null; render();
+  b.classList.add("active");
+  cat=b.dataset.cat;
+  surprise=null;
+  render();
 });
 
-["distance","budget","day","sort"].forEach(id=>$("#"+id).onchange=()=>{surprise=null;render()});
+["budget","day","sort"].forEach(id=>$("#"+id).onchange=()=>{surprise=null;render()});
+$("#distance").onchange=()=>loadLiveEvents($("#locationSearch").value);
 $("#search").oninput=()=>{surprise=null;render()};
 
 $("#surprise").onclick=()=>{
   const a=list();
-  if(a.length){surprise=a[Math.floor(Math.random()*a.length)].id;render();}
+  if(a.length){
+    surprise=String(a[Math.floor(Math.random()*a.length)].id);
+    render();
+  }
 };
 
 $("#build").onclick=buildPlan;
@@ -681,10 +854,10 @@ $("#theme").onclick=()=>{
 };
 
 $("#locationSearch").value=currentArea;
-applyArea(currentArea);
 renderSaved();
 renderPlanner();
 screen("discover");
+loadLiveEvents(currentArea);
 </script>
 
 </body>
