@@ -607,8 +607,7 @@ async function loadLiveEvents(area){
       method:"POST",
       headers:{
         "Content-Type":"application/json",
-        "apikey":SUPABASE_PUBLISHABLE_KEY,
-        "Authorization":"Bearer "+SUPABASE_PUBLISHABLE_KEY
+        "apikey":SUPABASE_PUBLISHABLE_KEY
       },
       body:JSON.stringify(body)
     });
@@ -869,6 +868,7 @@ $("#theme").onclick=()=>{
 };
 
 $("#locationSearch").value=currentArea;
+$("#budget").value="999";
 renderSaved();
 renderPlanner();
 screen("discover");
