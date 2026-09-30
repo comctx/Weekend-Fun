@@ -775,20 +775,21 @@ async function loadLiveEvents(area){
     return true;
   });
 
+  const sourceWarnings=[];
+  if(communityResult.status==="rejected") sourceWarnings.push("Community source: "+String(communityResult.reason?.message||communityResult.reason));
+  if(carResult.status==="rejected") sourceWarnings.push("Car-show source: "+String(carResult.reason?.message||carResult.reason));
+  if(tmResult.status==="rejected") sourceWarnings.push("Ticketmaster: "+String(tmResult.reason?.message||tmResult.reason));
+
   if(events.length){
     const parts=[];
     if(communityEvents.length) parts.push(communityEvents.length+" community");
     if(carEvents.length) parts.push(carEvents.length+" car show"+(carEvents.length===1?"":"s"));
     if(tmEvents.length) parts.push(tmEvents.length+" Ticketmaster");
-    notice.innerHTML="<b>"+events.length+" live event"+(events.length===1?"":"s")+"</b> found near "+currentArea+" ("+parts.join(" + ")+").";
+    notice.innerHTML="<b>"+events.length+" live event"+(events.length===1?"":"s")+"</b> found near "+currentArea+" ("+parts.join(" + ")+")."
+      +(sourceWarnings.length?"<br><b>Source warning:</b> "+sourceWarnings.join(" • "):"");
   }else{
-    const errors=[];
-    if(communityResult.status==="rejected") errors.push("community: "+String(communityResult.reason?.message||communityResult.reason));
-    if(carResult.status==="rejected") errors.push("car shows: "+String(carResult.reason?.message||carResult.reason));
-    if(tmResult.status==="rejected") errors.push("Ticketmaster: "+String(tmResult.reason?.message||tmResult.reason));
-
-    notice.innerHTML=errors.length
-      ? "<b>Live event search could not fully load.</b> "+errors.join(" • ")
+    notice.innerHTML=sourceWarnings.length
+      ? "<b>Live event search could not fully load.</b> "+sourceWarnings.join(" • ")
       : "No approved community, car-show, or Ticketmaster events were found near <b>"+currentArea+"</b>.";
   }
 
