@@ -700,7 +700,7 @@ async function fetchCommunityEvents(area){
   }
 }
 
-async function fetchCarShowEvents(body){
+async function fetchFindLocalEvents(body){
   const controller=new AbortController();
   const timeoutId=setTimeout(()=>controller.abort(),12000);
   try{
@@ -716,7 +716,7 @@ async function fetchCarShowEvents(body){
 
     const data=await response.json().catch(()=>({}));
     if(!response.ok || data?.success===false){
-      const msg=data?.error||("Car-show request failed: "+response.status);
+      const msg=data?.error||("Find Local request failed: "+response.status);
       throw new Error(msg);
     }
 
@@ -727,7 +727,7 @@ async function fetchCarShowEvents(body){
       emoji:e.emoji||"🚗",
       price:e.price===undefined?null:e.price,
       miles:e.miles===undefined?null:e.miles,
-      sourceType:"Car Shows",
+      sourceType:"Find Local",
       live:true,
       image:e.image||""
     }));
@@ -749,7 +749,7 @@ async function loadLiveEvents(area){
   events=[];
   surprise=null;
   notice.classList.add("show");
-  notice.textContent="Looking for Ticketmaster, community events, and car shows near "+currentArea+"…";
+  notice.textContent="Looking for Ticketmaster, community events, and local events near "+currentArea+"…";
   render();
 
   const body={
@@ -757,18 +757,18 @@ async function loadLiveEvents(area){
     radius:$("#distance").value
   };
 
-  const [tmResult, communityResult, carResult]=await Promise.allSettled([
+  const [tmResult, communityResult, findLocalResult]=await Promise.allSettled([
     fetchTicketmasterEvents(body),
     fetchCommunityEvents(currentArea),
-    fetchCarShowEvents(body)
+    fetchFindLocalEvents(body)
   ]);
 
   const tmEvents=tmResult.status==="fulfilled"?tmResult.value:[];
   const communityEvents=communityResult.status==="fulfilled"?communityResult.value:[];
-  const carEvents=carResult.status==="fulfilled"?carResult.value:[];
+  const findLocalEvents=findLocalResult.status==="fulfilled"?findLocalResult.value:[];
 
   const seen=new Set();
-  events=[...communityEvents,...carEvents,...tmEvents].filter(e=>{
+  events=[...communityEvents,...findLocalEvents,...tmEvents].filter(e=>{
     const key=(e.name+"|"+e.day+"|"+e.place).toLowerCase();
     if(seen.has(key)) return false;
     seen.add(key);
@@ -777,20 +777,20 @@ async function loadLiveEvents(area){
 
   const sourceWarnings=[];
   if(communityResult.status==="rejected") sourceWarnings.push("Community source: "+String(communityResult.reason?.message||communityResult.reason));
-  if(carResult.status==="rejected") sourceWarnings.push("Car-show source: "+String(carResult.reason?.message||carResult.reason));
+  if(findLocalResult.status==="rejected") sourceWarnings.push("Find Local: "+String(findLocalResult.reason?.message||findLocalResult.reason));
   if(tmResult.status==="rejected") sourceWarnings.push("Ticketmaster: "+String(tmResult.reason?.message||tmResult.reason));
 
   if(events.length){
     const parts=[];
     if(communityEvents.length) parts.push(communityEvents.length+" community");
-    if(carEvents.length) parts.push(carEvents.length+" car show"+(carEvents.length===1?"":"s"));
+    if(findLocalEvents.length) parts.push(findLocalEvents.length+" local");
     if(tmEvents.length) parts.push(tmEvents.length+" Ticketmaster");
     notice.innerHTML="<b>"+events.length+" live event"+(events.length===1?"":"s")+"</b> found near "+currentArea+" ("+parts.join(" + ")+")."
       +(sourceWarnings.length?"<br><b>Source warning:</b> "+sourceWarnings.join(" • "):"");
   }else{
     notice.innerHTML=sourceWarnings.length
       ? "<b>Live event search could not fully load.</b> "+sourceWarnings.join(" • ")
-      : "No approved community, car-show, or Ticketmaster events were found near <b>"+currentArea+"</b>.";
+      : "No approved community, Find Local, or Ticketmaster events were found near <b>"+currentArea+"</b>.";
   }
 
   loading=false;
@@ -840,7 +840,7 @@ function card(e){
       <div style="min-width:0">
         <div class="title">${e.name}</div>
         <div class="meta">${e.day} • ${e.time}<br>${distanceText(e)} • ${money(e.price)} • ${e.place}</div>
-        <div class="statusrow"><span class="statuspill verified">${e.sourceType==="Community"?"✓ Approved community event":e.sourceType==="Car Shows"?"✓ Live car show":"✓ Live Ticketmaster"}</span></div>
+        <div class="statusrow"><span class="statuspill verified">${e.sourceType==="Community"?"✓ Approved community event":e.sourceType==="Find Local"?"✓ Local event":"✓ Live Ticketmaster"}</span></div>
         <div class="desc">${e.desc}</div>
       </div>
     </div>
@@ -880,7 +880,7 @@ function render(){
   $("#results").textContent=loading?"Loading…":a.length+" result"+(a.length===1?"":"s");
   $("#heroCount").textContent=loading?"🔎 Finding live events…":"✨ "+a.length+" ideas waiting for you";
   $("#cards").innerHTML=loading
-    ? '<div class="empty">Searching Ticketmaster, community events, and car shows…</div>'
+    ? '<div class="empty">Searching Ticketmaster, community events, and local events…</div>'
     : a.length?a.map(card).join(""):'<div class="empty">No events match those filters.</div>';
   bind($("#cards"));
 }
@@ -924,7 +924,7 @@ function details(id){
     <div class="detailEmoji">${e.emoji}</div>
     <div class="detailTitle">${e.name}</div>
     <p class="meta">${e.desc}</p>
-    <div class="statusrow"><span class="statuspill verified">${e.sourceType==="Community"?"✓ Approved community event":e.sourceType==="Car Shows"?"✓ Live car show":"✓ Live Ticketmaster"}</span></div>
+    <div class="statusrow"><span class="statuspill verified">${e.sourceType==="Community"?"✓ Approved community event":e.sourceType==="Find Local"?"✓ Local event":"✓ Live Ticketmaster"}</span></div>
     <div class="info"><b>When:</b> ${e.day} • ${e.time}</div>
     <div class="info"><b>Cost:</b> ${money(e.price)}</div>
     <div class="info"><b>Area:</b> ${distanceText(e)}</div>
@@ -932,7 +932,7 @@ function details(id){
     <div class="info"><b>About:</b> ${e.detail}</div>
     <a id="voiceNavBtn" class="source directions" href="#">🔊 Start Voice Navigation</a>
     <div class="navHint">Your phone's Maps app provides the spoken turn-by-turn directions.</div>
-    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">${e.sourceType==="Community"?"Open Event Page":e.sourceType==="Car Shows"?"Open Car Show Source":"View Event / Tickets"}</a>`:""}
+    ${e.source?`<a class="source" target="_blank" rel="noopener" href="${e.source}">${e.sourceType==="Community"?"Open Event Page":e.sourceType==="Find Local"?"Open Local Event":"View Event / Tickets"}</a>`:""}
   `;
 
   $("#voiceNavBtn").onclick=ev=>{
